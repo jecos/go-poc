@@ -116,7 +116,6 @@ func initDb(folderName string) *sql.DB {
 	placeholders := strings.Repeat("?, ", len(columns))
 	placeholders = placeholders[:len(placeholders)-2]
 	insertQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, columnNames, placeholders)
-	log.Printf("Constructed Query: %s", insertQuery)
 	for scanner.Scan() {
 		line := scanner.Text()
 		values := strings.Split(line, "\t")
