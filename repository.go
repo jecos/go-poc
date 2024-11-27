@@ -74,7 +74,8 @@ func (r *MySQLRepository) GetOccurrences(seqId int, selectedCols []string, userF
 
 	if userFilter != nil {
 		query := fmt.Sprintf("SELECT %s FROM occurrences where seq_id = ? and %s", strings.Join(validColumns, ", "), userFilter.userFilters)
-		rows, err = r.db.Query(query, seqId, userFilter.userParams)
+		args := append([]interface{}{seqId}, userFilter.userParams...)
+		rows, err = r.db.Query(query, args...)
 	} else {
 		query := fmt.Sprintf("SELECT %s FROM occurrences where seq_id = ?", strings.Join(validColumns, ", "))
 		rows, err = r.db.Query(query, seqId)

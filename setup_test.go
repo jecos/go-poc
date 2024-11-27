@@ -26,48 +26,37 @@ var (
 
 func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *sql.DB)) {
 	t.Parallel()
-	db := initDb(dbName)
+	db, dbName, err := initDb(dbName)
 	testFunc(t, db)
-	err := db.Close()
+	db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
+	err = db.Close()
 	if err != nil {
-		return
+		fmt.Errorf("Failed to create db connection: %v\n", err)
+		os.Exit(1)
 	}
 }
-func initDb(folderName string) *sql.DB {
+func initDb(folderName string) (*sql.DB, string, error) {
 	ctx := context.Background()
 	host, err := starrocksContainer.Host(ctx)
-	if err != nil {
-		fmt.Printf("Failed to get container host: %v\n", err)
-		os.Exit(1)
-	}
 
 	port, err := starrocksContainer.MappedPort(ctx, "9030")
-	if err != nil {
-		fmt.Printf("Failed to get container port: %v\n", err)
-		os.Exit(1)
-	}
+
 	dsn := fmt.Sprintf("root:@tcp(%s:%s)/?interpolateParams=true", host, port.Port())
 	db, e := sql.Open("mysql", dsn)
-	if e != nil {
-		fmt.Printf("Failed to connect to StarRocks: %v\n", err)
-		os.Exit(1)
-	}
-
+	err = e
 	// Create a database with the name of the folder and a random number
 	dbName := fmt.Sprintf("%s_%d", folderName, rand.Intn(1000000))
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", dbName))
+
 	if err != nil {
 		fmt.Printf("Failed to create database: %v\n", err)
 		os.Exit(1)
 	}
 	_, err = db.Exec(fmt.Sprintf("USE %s;", dbName))
-	if err != nil {
-		fmt.Printf("Failed to use database: %v\n", err)
-		os.Exit(1)
-	}
 
 	// Create the occurrences table
 	createTableSQL := `
+
   CREATE TABLE IF NOT EXISTS occurrences (
    seq_id INT,
    locus_id VARCHAR(255),
@@ -97,10 +86,7 @@ func initDb(folderName string) *sql.DB {
 	// Populate the occurrences table with data from occurrence.tsv
 	filePath := filepath.Join("test_resources", folderName, "occurrences.tsv")
 	file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Printf("Failed to open file: %v\n", err)
-		os.Exit(1)
-	}
+
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -133,11 +119,8 @@ func initDb(folderName string) *sql.DB {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Error reading file: %v\n", err)
-		os.Exit(1)
-	}
-	return db
+	err = scanner.Err()
+	return db, dbName, err
 }
 
 func startStarRocksContainer() (testcontainers.Container, error) {
