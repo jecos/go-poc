@@ -27,11 +27,18 @@ var (
 func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *sql.DB)) {
 	t.Parallel()
 	db, dbName, err := initDb(dbName)
+	if err != nil {
+		fmt.Errorf("Failed to init db connection: %v\n", err)
+		os.Exit(1)
+	}
 	testFunc(t, db)
-	db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
+	if err != nil {
+		fmt.Errorf("Failed to drob database: %v\n", err)
+	}
 	err = db.Close()
 	if err != nil {
-		fmt.Errorf("Failed to create db connection: %v\n", err)
+		fmt.Errorf("Failed to close db connection: %v\n", err)
 		os.Exit(1)
 	}
 }
