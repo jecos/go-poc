@@ -38,58 +38,79 @@ func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T,
 func initDb(folderName string) (*sql.DB, string, error) {
 	ctx := context.Background()
 	host, err := starrocksContainer.Host(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get container host: %v", err)
+	}
 
 	port, err := starrocksContainer.MappedPort(ctx, "9030")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get container port: %v", err)
+	}
 
 	dsn := fmt.Sprintf("root:@tcp(%s:%s)/?interpolateParams=true", host, port.Port())
-	db, e := sql.Open("mysql", dsn)
-	err = e
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to connect to StarRocks: %v", err)
+	}
+
 	// Create a database with the name of the folder and a random number
 	dbName := fmt.Sprintf("%s_%d", folderName, rand.Intn(1000000))
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", dbName))
-
 	if err != nil {
-		fmt.Printf("Failed to create database: %v\n", err)
-		os.Exit(1)
+		return nil, "", fmt.Errorf("failed to create database: %v", err)
 	}
 	_, err = db.Exec(fmt.Sprintf("USE %s;", dbName))
-
-	// Create the occurrences table
-	createTableSQL := `
-
-  CREATE TABLE IF NOT EXISTS occurrences (
-   seq_id INT,
-   locus_id VARCHAR(255),
-   quality BIGINT,
-   filter VARCHAR(255),
-   zygosity VARCHAR(255),
-   pf DOUBLE,
-   af DOUBLE,
-   gnomad_v3_af DOUBLE,
-   hgvsg VARCHAR(255),
-   omim_inheritance_code VARCHAR(255),
-   ad_ratio DOUBLE,
-   variant_class VARCHAR(255),
-   vep_impact VARCHAR(255),
-   symbol VARCHAR(255),
-   clinvar_interpretation VARCHAR(255),
-   mane_select BOOLEAN,
-   canonical BOOLEAN
-  );
- `
-	_, err = db.Exec(createTableSQL)
 	if err != nil {
-		fmt.Printf("Failed to create table: %v\n", err)
-		os.Exit(1)
+		return nil, "", fmt.Errorf("failed to use database: %v", err)
 	}
 
-	// Populate the occurrences table with data from occurrence.tsv
-	filePath := filepath.Join("test_resources", folderName, "occurrences.tsv")
-	file, err := os.Open(filePath)
+	// Read the list of .tsv files in the folder
+	files, err := os.ReadDir(filepath.Join("test_resources", folderName))
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read directory: %v", err)
+	}
 
-	defer file.Close()
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".tsv" {
+			err = createTableAndPopulateData(db, folderName, file)
+			if err != nil {
+				return nil, "", fmt.Errorf("failed to create table and populate data: %v", err)
+			}
+		}
+	}
 
-	scanner := bufio.NewScanner(file)
+	return db, dbName, nil
+}
+
+func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry) error {
+	if filepath.Ext(file.Name()) != ".tsv" {
+		return nil
+	}
+
+	tableName := strings.TrimSuffix(file.Name(), ".tsv")
+	sqlFilePath := filepath.Join("test_resources", "sql", tableName+".sql")
+
+	// Read the SQL file
+	sqlFile, err := os.ReadFile(sqlFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read SQL file: %v", err)
+	}
+
+	// Execute the SQL file to create the table
+	_, err = db.Exec(string(sqlFile))
+	if err != nil {
+		return fmt.Errorf("failed to create table: %v", err)
+	}
+
+	// Populate the table with data from the .tsv file
+	tsvFilePath := filepath.Join("test_resources", folderName, file.Name())
+	tsvFile, err := os.Open(tsvFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to open TSV file: %v", err)
+	}
+	defer tsvFile.Close()
+
+	scanner := bufio.NewScanner(tsvFile)
 	// Read the header line
 	var columns []string
 	if scanner.Scan() {
@@ -97,7 +118,6 @@ func initDb(folderName string) (*sql.DB, string, error) {
 		columns = strings.Split(header, "\t")
 	}
 
-	tableName := "occurrences"
 	columnNames := strings.Join(columns, ", ")
 	placeholders := strings.Repeat("?, ", len(columns))
 	placeholders = placeholders[:len(placeholders)-2]
@@ -115,12 +135,15 @@ func initDb(folderName string) (*sql.DB, string, error) {
 		// Execute the prepared statement
 		_, err = db.Exec(insertQuery, args...)
 		if err != nil {
-			log.Printf("Failed to insert row: %v", err)
+			log.Printf("failed to insert row: %v", err)
 		}
 	}
 
-	err = scanner.Err()
-	return db, dbName, err
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading TSV file: %v", err)
+	}
+
+	return nil
 }
 
 func startStarRocksContainer() (testcontainers.Container, error) {
