@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  starrocks:
+    image: starrocks/allin1-ubuntu
+    container_name: starrocks
+    ports:
+      - "9030:9030"
+      - "8030:8030"
+      - "8040:8040"      
+
+  init:
+    image: starrocks/allin1-ubuntu
+    depends_on:
+      - starrocks
+    volumes:
+      - ./init-sql:/docker-entrypoint-initdb.d
+    entrypoint: >
+      /bin/bash -c "
+      sleep 30;
+      mysql -hstarrocks -P9030 -uroot < /docker-entrypoint-initdb.d/init.sql;
+      exit 0"
