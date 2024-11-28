@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-var ageMetadata = FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default"}
-var salaryMetadata = FieldMetadata{FieldName: "salary", IsAllowed: true, DefaultOp: "default"}
-var cityMetadata = FieldMetadata{FieldName: "city", IsAllowed: true, DefaultOp: "default"}
-var hobbiesMetadata = FieldMetadata{FieldName: "hobbies", IsAllowed: true, CustomOp: "array_contains"}
+var ageMetadata = Field{Name: "age", CanBeFiltered: true, DefaultOp: "default"}
+var salaryMetadata = Field{Name: "salary", CanBeFiltered: true, DefaultOp: "default"}
+var cityMetadata = Field{Name: "city", CanBeFiltered: true, DefaultOp: "default"}
+var hobbiesMetadata = Field{Name: "hobbies", CanBeFiltered: true, CustomOp: "array_contains"}
 
-var fieldMetadata = []FieldMetadata{
+var fieldMetadata = []Field{
 	ageMetadata,
 	salaryMetadata,
 	cityMetadata,
@@ -31,9 +31,9 @@ func TestParseSQONToAST(t *testing.T) {
 	ast, fields, err := parseSQONToAST(&sqon, &fieldMetadata)
 	if assert.NoError(t, err) {
 		expectedFieldMetadata :=
-			[]FieldMetadata{
-				{FieldName: "age", IsAllowed: true, DefaultOp: "default"},
-				{FieldName: "salary", IsAllowed: true, DefaultOp: "default"},
+			[]Field{
+				{Name: "age", CanBeFiltered: true, DefaultOp: "default"},
+				{Name: "salary", CanBeFiltered: true, DefaultOp: "default"},
 			}
 		assert.ElementsMatch(t, expectedFieldMetadata, fields)
 		andNode, ok := ast.(*AndNode)
@@ -41,13 +41,13 @@ func TestParseSQONToAST(t *testing.T) {
 		if assert.Len(t, andNode.Children, 2) {
 			compNode1, ok := andNode.Children[0].(*ComparisonNode)
 			assert.True(t, ok)
-			assert.Equal(t, compNode1.FieldMetadata, ageMetadata)
+			assert.Equal(t, compNode1.Field, ageMetadata)
 			assert.Equal(t, "in", compNode1.Operator)
 			assert.Equal(t, []interface{}{30, 40}, compNode1.Value)
 
 			compNode2, ok := andNode.Children[1].(*ComparisonNode)
 			assert.True(t, ok)
-			assert.Equal(t, compNode2.FieldMetadata, salaryMetadata)
+			assert.Equal(t, compNode2.Field, salaryMetadata)
 			assert.Equal(t, ">", compNode2.Operator)
 			assert.Equal(t, 50000, compNode2.Value)
 		}
@@ -94,7 +94,7 @@ func TestParseOneField(t *testing.T) {
 	_, visitedFields, err := parseSQONToAST(&sqon, &fieldMetadata)
 	assert.NoError(t, err)
 	assert.Len(t, visitedFields, 1)
-	assert.Equal(t, []FieldMetadata{{FieldName: "age", IsAllowed: true, DefaultOp: "default"}}, visitedFields)
+	assert.Equal(t, []Field{{Name: "age", CanBeFiltered: true, DefaultOp: "default"}}, visitedFields)
 }
 
 func TestParseInvalidBetweenOneParam(t *testing.T) {
@@ -217,7 +217,7 @@ func TestParseSQONtoAST(t *testing.T) {
 	assert.NotNil(t, ast)
 	assert.NotEmpty(t, visitedFields)
 
-	expectedFields := []FieldMetadata{
+	expectedFields := []Field{
 		ageMetadata, salaryMetadata, cityMetadata, hobbiesMetadata,
 	}
 	assert.ElementsMatch(t, expectedFields, visitedFields)
@@ -227,7 +227,7 @@ func TestParseSQONtoAST(t *testing.T) {
 
 	compNode1, ok := orNode.Children[0].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode1.FieldMetadata, ageMetadata)
+	assert.Equal(t, compNode1.Field, ageMetadata)
 	assert.Equal(t, "in", compNode1.Operator)
 	assert.Equal(t, []interface{}{30, 40}, compNode1.Value)
 
@@ -237,19 +237,19 @@ func TestParseSQONtoAST(t *testing.T) {
 
 	compNode2, ok := andNode.Children[0].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode2.FieldMetadata, ageMetadata)
+	assert.Equal(t, compNode2.Field, ageMetadata)
 	assert.Equal(t, "in", compNode2.Operator)
 	assert.Equal(t, []interface{}{10, 20}, compNode2.Value)
 
 	compNode3, ok := andNode.Children[1].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode3.FieldMetadata, salaryMetadata)
+	assert.Equal(t, compNode3.Field, salaryMetadata)
 	assert.Equal(t, ">=", compNode3.Operator)
 	assert.Equal(t, 50000, compNode3.Value)
 
 	compNode4, ok := orNode.Children[2].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode4.FieldMetadata, hobbiesMetadata)
+	assert.Equal(t, compNode4.Field, hobbiesMetadata)
 	assert.Equal(t, "in", compNode4.Operator)
 	assert.Equal(t, []interface{}{"soccer", "hiking"}, compNode4.Value)
 
@@ -257,7 +257,7 @@ func TestParseSQONtoAST(t *testing.T) {
 	assert.True(t, ok)
 	notInNode, ok := notNode.Child.(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, notInNode.FieldMetadata, cityMetadata)
+	assert.Equal(t, notInNode.Field, cityMetadata)
 	assert.Equal(t, "not-in", notInNode.Operator)
 	assert.Equal(t, []interface{}{"New York", "Los Angeles"}, notInNode.Value)
 }
@@ -273,10 +273,10 @@ func TestParseSQONOptimizeOr(t *testing.T) {
 
 	ast, visitedFields, err := parseSQONToAST(&sqon, &fieldMetadata)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []FieldMetadata{{FieldName: "age", IsAllowed: true, DefaultOp: "default"}}, visitedFields)
+	assert.ElementsMatch(t, []Field{{Name: "age", CanBeFiltered: true, DefaultOp: "default"}}, visitedFields)
 	inNode, ok := ast.(*ComparisonNode)
 	if assert.True(t, ok) {
-		assert.Equal(t, inNode.FieldMetadata, ageMetadata)
+		assert.Equal(t, inNode.Field, ageMetadata)
 		assert.Equal(t, "in", inNode.Operator)
 		assert.Equal(t, []interface{}{30, 40}, inNode.Value)
 	}
@@ -293,17 +293,17 @@ func TestParseSQONOptimizeAnd(t *testing.T) {
 
 	ast, visitedFields, err := parseSQONToAST(&sqon, &fieldMetadata)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []FieldMetadata{{FieldName: "age", IsAllowed: true, DefaultOp: "default"}}, visitedFields)
+	assert.ElementsMatch(t, []Field{{Name: "age", CanBeFiltered: true, DefaultOp: "default"}}, visitedFields)
 	inNode, ok := ast.(*ComparisonNode)
 	if assert.True(t, ok) {
-		assert.Equal(t, inNode.FieldMetadata, ageMetadata)
+		assert.Equal(t, inNode.Field, ageMetadata)
 		assert.Equal(t, "in", inNode.Operator)
 		assert.Equal(t, []interface{}{30, 40}, inNode.Value)
 	}
 }
 func TestQueryToSQLIn(t *testing.T) {
 	t.Parallel()
-	node := ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, FieldMetadata: ageMetadata}
+	node := ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, Field: ageMetadata}
 
 	sqlQuery, params := node.ToSQL()
 
@@ -315,7 +315,7 @@ func TestQueryToSQLIn(t *testing.T) {
 }
 func TestQueryToSQLInSingleValueInArray(t *testing.T) {
 	t.Parallel()
-	node := ComparisonNode{Operator: "in", Value: []interface{}{10}, FieldMetadata: ageMetadata}
+	node := ComparisonNode{Operator: "in", Value: []interface{}{10}, Field: ageMetadata}
 
 	sqlQuery, params := node.ToSQL()
 
@@ -327,7 +327,7 @@ func TestQueryToSQLInSingleValueInArray(t *testing.T) {
 }
 func TestQueryToSQLInSingleValue(t *testing.T) {
 	t.Parallel()
-	node := ComparisonNode{Operator: "in", Value: 10, FieldMetadata: ageMetadata}
+	node := ComparisonNode{Operator: "in", Value: 10, Field: ageMetadata}
 
 	sqlQuery, params := node.ToSQL()
 
@@ -339,7 +339,7 @@ func TestQueryToSQLInSingleValue(t *testing.T) {
 }
 func TestQueryToSQLInAlias(t *testing.T) {
 	t.Parallel()
-	node := ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, FieldMetadata: FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default", TableAlias: "e"}}
+	node := ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, Field: Field{Name: "age", CanBeFiltered: true, Table: Table{Alias: "e"}}}
 
 	sqlQuery, params := node.ToSQL()
 
@@ -351,7 +351,7 @@ func TestQueryToSQLInAlias(t *testing.T) {
 }
 func TestQueryToSQLBetween(t *testing.T) {
 	t.Parallel()
-	node := ComparisonNode{Operator: "between", Value: []interface{}{30, 40}, FieldMetadata: ageMetadata}
+	node := ComparisonNode{Operator: "between", Value: []interface{}{30, 40}, Field: ageMetadata}
 
 	sqlQuery, params := node.ToSQL()
 
@@ -365,16 +365,16 @@ func TestQueryCompleteToSQL(t *testing.T) {
 	t.Parallel()
 	node := &OrNode{
 		Children: []FilterNode{
-			&ComparisonNode{Operator: "in", Value: []interface{}{30, 40}, FieldMetadata: ageMetadata},
+			&ComparisonNode{Operator: "in", Value: []interface{}{30, 40}, Field: ageMetadata},
 			&AndNode{
 				Children: []FilterNode{
-					&ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, FieldMetadata: ageMetadata},
-					&ComparisonNode{Operator: ">=", Value: 50000, FieldMetadata: salaryMetadata},
+					&ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, Field: ageMetadata},
+					&ComparisonNode{Operator: ">=", Value: 50000, Field: salaryMetadata},
 				},
 			},
-			&ComparisonNode{Operator: "in", Value: []interface{}{"soccer", "hiking"}, FieldMetadata: hobbiesMetadata},
+			&ComparisonNode{Operator: "in", Value: []interface{}{"soccer", "hiking"}, Field: hobbiesMetadata},
 			&NotNode{
-				Child: &ComparisonNode{Operator: "not-in", Value: []interface{}{"New York", "Los Angeles"}, FieldMetadata: cityMetadata},
+				Child: &ComparisonNode{Operator: "not-in", Value: []interface{}{"New York", "Los Angeles"}, Field: cityMetadata},
 			},
 		},
 	}

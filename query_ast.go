@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/Goldziher/go-utils/sliceutils"
+	"go-poc/models"
 	"strings"
 )
 
@@ -35,9 +36,9 @@ type NotNode struct {
 }
 
 type ComparisonNode struct {
-	Operator      string
-	Value         interface{}
-	FieldMetadata FieldMetadata
+	Operator string
+	Value    interface{}
+	Field    Field
 }
 
 func (n *AndNode) ToSQL() (string, []interface{}) {
@@ -72,10 +73,10 @@ func (n *ComparisonNode) ToSQL() (string, []interface{}) {
 		params []interface{}
 	)
 
-	if n.FieldMetadata.TableAlias != "" {
-		field = fmt.Sprintf("%s.%s", n.FieldMetadata.TableAlias, n.FieldMetadata.FieldName)
+	if n.Field.Table.Alias != "" {
+		field = fmt.Sprintf("%s.%s", n.Field.Table.Alias, n.Field.Name)
 	} else {
-		field = n.FieldMetadata.FieldName
+		field = n.Field.Name
 	}
 
 	if v, ok := n.Value.([]interface{}); ok {
@@ -116,16 +117,21 @@ func placeholders(count int) string {
 }
 
 type Query struct {
-	Filters      FilterNode
-	UsedMetadata []FieldMetadata
+	Filters        FilterNode //Root node of the filter tree
+	FilteredFields []Field    //Fields used in the filters
+	SelectedFields []Field    //Fields used for selection
 }
 
-func ParseSQON(sqon *SQON, metadata *[]FieldMetadata) (Query, error) {
-	root, visitedMeta, err := parseSQONToAST(sqon, metadata)
-	return Query{Filters: root, UsedMetadata: visitedMeta}, err
+func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
+
+	// Define allowed selectedCols
+	selectedFields := models.FindSelectedFields(fields, selected)
+
+	root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
+	return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields}, err
 }
 
-func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldMetadata, error) {
+func parseSQONToAST(sqon *SQON, fields *[]Field) (FilterNode, []Field, error) {
 	if sqon.Field != "" && sqon.Content != nil {
 		return nil, nil, fmt.Errorf("a sqon cannot have both content and field defined: %s", sqon.Field)
 	}
@@ -133,12 +139,12 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldM
 
 	case "and", "or":
 		if len(sqon.Content) == 1 { // Flatten single child AND/OR nodes
-			return parseSQONToAST(&sqon.Content[0], metadata)
+			return parseSQONToAST(&sqon.Content[0], fields)
 		}
 		children := make([]FilterNode, len(sqon.Content))
-		var newVisitedFields []FieldMetadata
+		var newVisitedFields []Field
 		for i, item := range sqon.Content {
-			child, meta, err := parseSQONToAST(&item, metadata)
+			child, meta, err := parseSQONToAST(&item, fields)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -155,7 +161,7 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldM
 		if len(sqon.Content) != 1 {
 			return nil, nil, fmt.Errorf("'not' operation must have exactly one child: %s", sqon.Field)
 		}
-		ast, meta, err := parseSQONToAST(&sqon.Content[0], metadata)
+		ast, meta, err := parseSQONToAST(&sqon.Content[0], fields)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -165,9 +171,9 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldM
 		if sqon.Value == nil {
 			return nil, nil, fmt.Errorf("value must be defined: %s", sqon.Field)
 		}
-		meta := findFieldMetaByName(metadata, sqon.Field)
+		meta := models.FindByName(fields, sqon.Field)
 
-		if meta == nil || !meta.IsAllowed {
+		if meta == nil || !meta.CanBeFiltered {
 			return nil, nil, fmt.Errorf("unauthorized or unknown field: %s", sqon.Field)
 		}
 
@@ -187,19 +193,12 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldM
 		}
 
 		return &ComparisonNode{
-			Operator:      sqon.Op,
-			Value:         sqon.Value,
-			FieldMetadata: *meta,
-		}, []FieldMetadata{*meta}, nil
+			Operator: sqon.Op,
+			Value:    sqon.Value,
+			Field:    *meta,
+		}, []Field{*meta}, nil
 
 	default:
 		return nil, nil, fmt.Errorf("invalid operation: %s", sqon.Op)
 	}
-}
-
-func findFieldMetaByName(metas *[]FieldMetadata, name string) *FieldMetadata {
-	return sliceutils.Find(*metas, func(meta FieldMetadata, index int, slice []FieldMetadata) bool {
-		return meta.FieldName == name
-	})
-
 }

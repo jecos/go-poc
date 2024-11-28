@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/Goldziher/go-utils/sliceutils"
 	"strings"
 
 	"github.com/georgysavva/scany/sqlscan"
@@ -10,7 +11,7 @@ import (
 
 type Repository interface {
 	CheckDatabaseConnection() string
-	GetOccurrences(seqId int, selectedCols []string, userFilter *Query) ([]Occurrence, error)
+	GetOccurrences(seqId int, userFilter *Query) ([]Occurrence, error)
 	CountOccurrences(seqId int) (int, error)
 }
 
@@ -29,51 +30,26 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (r *MySQLRepository) GetOccurrences(seqId int, selectedCols []string, userFilter *Query) ([]Occurrence, error) {
-	if len(selectedCols) == 0 || (len(selectedCols) == 1 && selectedCols[0] == "") {
-		selectedCols = []string{"locus_id"}
+func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurrence, error) {
+	var columns = sliceutils.Map(userQuery.SelectedFields, func(field Field, index int, slice []Field) string {
+		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.Name)
+	})
+	if columns == nil {
+		columns = []string{"o.locus_id"}
 	}
-	// Define allowed selectedCols
-	allowedColumns := map[string]bool{
-		"seq_id":                 true,
-		"locus_id":               true,
-		"quality":                true,
-		"filter":                 true,
-		"zygosity":               true,
-		"pf":                     true,
-		"af":                     true,
-		"gnomad_v3_af":           true,
-		"hgvsg":                  true,
-		"omim_inheritance_code":  true,
-		"ad_ratio":               true,
-		"variant_class":          true,
-		"vep_impact":             true,
-		"symbol":                 true,
-		"clinvar_interpretation": true,
-		"mane_select":            true,
-		"canonical":              true,
-	}
-	// Validate requested selectedCols
-	var validColumns []string
-	for _, col := range selectedCols {
-		if allowedColumns[col] {
-			validColumns = append(validColumns, col)
-		} else {
-			return nil, fmt.Errorf("invalid column: %s", col)
-		}
-	}
+	columnsPart := strings.Join(columns, ", ")
 	var (
 		rows *sql.Rows
 		err  error
 	)
 
-	if userFilter != nil {
-		filters, params := userFilter.Filters.ToSQL()
-		query := fmt.Sprintf("SELECT %s FROM occurrences o where o.seq_id = ? and %s", strings.Join(validColumns, ", "), filters)
+	if userQuery.Filters != nil {
+		filters, params := userQuery.Filters.ToSQL()
+		query := fmt.Sprintf("SELECT %s FROM occurrences o JOIN variants v ON v.locus_id=o.locus_id WHERE o.seq_id = ? AND %s", columnsPart, filters)
 		args := append([]interface{}{seqId}, params...)
 		rows, err = r.db.Query(query, args...)
 	} else {
-		query := fmt.Sprintf("SELECT %s FROM occurrences o where o.seq_id = ?", strings.Join(validColumns, ", "))
+		query := fmt.Sprintf("SELECT %s FROM occurrences o JOIN variants v ON v.locus_id=o.locus_id WHERE o.seq_id = ?", columnsPart)
 		rows, err = r.db.Query(query, seqId)
 	}
 	if err != nil {

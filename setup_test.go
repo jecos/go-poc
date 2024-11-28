@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -32,9 +31,10 @@ func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T,
 		os.Exit(1)
 	}
 	testFunc(t, db)
+	//Drop database
 	_, err = db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
 	if err != nil {
-		fmt.Errorf("Failed to drob database: %v\n", err)
+		fmt.Errorf("Failed to drop database: %v\n", err)
 	}
 	err = db.Close()
 	if err != nil {
@@ -126,9 +126,9 @@ func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry)
 	}
 
 	columnNames := strings.Join(columns, ", ")
-	placeholders := strings.Repeat("?, ", len(columns))
-	placeholders = placeholders[:len(placeholders)-2]
-	insertQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, columnNames, placeholders)
+	p := strings.Repeat("?, ", len(columns))
+	p = p[:len(p)-2]
+	insertQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, columnNames, p)
 	for scanner.Scan() {
 		line := scanner.Text()
 		values := strings.Split(line, "\t")
@@ -142,11 +142,11 @@ func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry)
 		// Execute the prepared statement
 		_, err = db.Exec(insertQuery, args...)
 		if err != nil {
-			log.Printf("failed to insert row: %v", err)
+			return fmt.Errorf("failed to insert row: %v", err)
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err = scanner.Err(); err != nil {
 		return fmt.Errorf("error reading TSV file: %v", err)
 	}
 

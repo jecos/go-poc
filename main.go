@@ -8,7 +8,8 @@ import (
 )
 
 type Occurrence = models.Occurrence
-type FieldMetadata = models.FieldMetadata
+type Field = models.Field
+type Table = models.Table
 
 func main() {
 	// Load configuration

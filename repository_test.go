@@ -7,6 +7,70 @@ import (
 	"testing"
 )
 
+var occurrenceTable = Table{
+	Name:  "occurrences",
+	Alias: "o",
+}
+var variantTable = Table{
+	Name:  "variants",
+	Alias: "v",
+}
+
+var filterField = Field{
+	Name:          "filter",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         occurrenceTable,
+}
+var seqIdField = Field{
+	Name:          "seq_id",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         occurrenceTable,
+}
+var locusIdField = Field{
+	Name:          "locus_id",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         occurrenceTable,
+}
+var zygosityField = Field{
+	Name:          "zygosity",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         occurrenceTable,
+}
+var adRatioField = Field{
+	Name:          "ad_ratio",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         occurrenceTable,
+}
+var pfField = Field{
+	Name:          "pf",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         variantTable,
+}
+var afField = Field{
+	Name:          "af",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         variantTable,
+}
+var variantClassField = Field{
+	Name:          "variant_class",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         variantTable,
+}
+var hgvsgField = Field{
+	Name:          "hgvsg",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	Table:         variantTable,
+}
+
 func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
 		repo := NewMySQLRepository(db)
@@ -20,12 +84,14 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
 
 		repo := NewMySQLRepository(db)
-		columns := []string{"seq_id", "locus_id", "filter", "zygosity", "pf", "af", "hgvsg", "ad_ratio", "variant_class"}
-		occurrences, err := repo.GetOccurrences(1, columns, nil)
+		query := Query{
+			SelectedFields: []Field{seqIdField, locusIdField, filterField, zygosityField, adRatioField, pfField, afField, variantClassField, hgvsgField},
+		}
+		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "locus1", occurrences[0].LocusId)
+			assert.Equal(t, "1000", occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Equal(t, "HET", occurrences[0].Zygosity)
 			assert.Equal(t, 0.99, occurrences[0].Pf)
@@ -40,12 +106,15 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
 		repo := NewMySQLRepository(db)
-		columns := []string{"seq_id", "locus_id", "filter"}
-		occurrences, err := repo.GetOccurrences(1, columns, nil)
+		query := Query{
+
+			SelectedFields: []Field{seqIdField, locusIdField, adRatioField, pfField, afField, variantClassField, filterField},
+		}
+		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "locus1", occurrences[0].LocusId)
+			assert.Equal(t, "1000", occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Empty(t, occurrences[0].VepImpact)
 		}
@@ -56,13 +125,13 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
 
 		repo := NewMySQLRepository(db)
-		var columns []string
-		occurrences, err := repo.GetOccurrences(1, columns, nil)
+		query := Query{}
+		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
 		assert.Len(t, occurrences, 1)
 
 		if assert.Len(t, occurrences, 1) {
-			assert.Equal(t, "locus1", occurrences[0].LocusId)
+			assert.Equal(t, "1000", occurrences[0].LocusId)
 			assert.Empty(t, occurrences[0].Filter)
 		}
 	})
@@ -81,26 +150,20 @@ func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *sql.DB) {
 
 		repo := NewMySQLRepository(db)
-		columns := []string{"seq_id", "locus_id", "filter", "zygosity", "pf", "af", "hgvsg", "ad_ratio", "variant_class"}
-		filter := Query{
+
+		query := Query{
 			Filters: &ComparisonNode{
 				Operator: "in",
 				Value:    "PASS",
-				FieldMetadata: FieldMetadata{
-					FieldName:  "filter",
-					IsAllowed:  true,
-					CustomOp:   "",
-					DefaultOp:  "",
-					TableName:  "",
-					TableAlias: "",
-				},
+				Field:    filterField,
 			},
+			SelectedFields: []Field{seqIdField, locusIdField, zygosityField, adRatioField, pfField, afField, variantClassField, filterField, hgvsgField},
 		}
-		occurrences, err := repo.GetOccurrences(1, columns, &filter)
+		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "locus1", occurrences[0].LocusId)
+			assert.Equal(t, "1000", occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Equal(t, "HET", occurrences[0].Zygosity)
 			assert.Equal(t, 0.99, occurrences[0].Pf)

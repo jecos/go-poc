@@ -15,11 +15,11 @@ func (m *MockRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (m *MockRepository) GetOccurrences(int, []string, *Query) ([]Occurrence, error) {
+func (m *MockRepository) GetOccurrences(int, *Query) ([]Occurrence, error) {
 	return []Occurrence{
 		{
 			SeqId:        1,
-			LocusId:      "locus1",
+			LocusId:      "1000",
 			Filter:       "PASS",
 			Zygosity:     "HET",
 			Pf:           0.99,
@@ -60,7 +60,7 @@ func TestOccurrencesListHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `[{
         "seq_id": 1,
-        "locus_id": "locus1",
+        "locus_id": "1000",
         "filter": "PASS",
         "zygosity": "HET",
         "pf": 0.99,
