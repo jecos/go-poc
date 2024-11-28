@@ -8,7 +8,7 @@ import (
 var ageMetadata = FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default"}
 var salaryMetadata = FieldMetadata{FieldName: "salary", IsAllowed: true, DefaultOp: "default"}
 var cityMetadata = FieldMetadata{FieldName: "city", IsAllowed: true, DefaultOp: "default"}
-var hobbiesMetadata = FieldMetadata{FieldName: "hobbiesMetadata", IsAllowed: true, CustomOp: "array_contains"}
+var hobbiesMetadata = FieldMetadata{FieldName: "hobbies", IsAllowed: true, CustomOp: "array_contains"}
 
 var fieldMetadata = []FieldMetadata{
 	ageMetadata,
@@ -202,7 +202,7 @@ func TestParseSQONtoAST(t *testing.T) {
 					{Op: ">=", Field: "salary", Value: 50000},
 				},
 			},
-			{Op: "in", Field: "hobbiesMetadata", Value: []interface{}{"soccer", "hiking"}},
+			{Op: "in", Field: "hobbies", Value: []interface{}{"soccer", "hiking"}},
 			{
 				Op: "not",
 				Content: []SQON{
@@ -381,7 +381,7 @@ func TestQueryCompleteToSQL(t *testing.T) {
 
 	sqlQuery, params := node.ToSQL()
 
-	expectedSQL := `(age IN (?, ?) OR (age IN (?, ?) AND salary >= ?) OR hobbiesMetadata IN (?, ?) OR NOT (city NOT IN (?, ?)))`
+	expectedSQL := `(age IN (?, ?) OR (age IN (?, ?) AND salary >= ?) OR hobbies IN (?, ?) OR NOT (city NOT IN (?, ?)))`
 	expectedParams := []interface{}{30, 40, 10, 20, 50000, "soccer", "hiking", "New York", "Los Angeles"}
 
 	assert.Equal(t, expectedSQL, sqlQuery)
