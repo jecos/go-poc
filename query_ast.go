@@ -67,9 +67,17 @@ func (n *NotNode) ToSQL() (string, []interface{}) {
 }
 
 func (n *ComparisonNode) ToSQL() (string, []interface{}) {
-	field := n.FieldMetadata.FieldName
+	var (
+		field  string
+		params []interface{}
+	)
 
-	var params []interface{}
+	if n.FieldMetadata.TableAlias != "" {
+		field = fmt.Sprintf("%s.%s", n.FieldMetadata.TableAlias, n.FieldMetadata.FieldName)
+	} else {
+		field = n.FieldMetadata.FieldName
+	}
+
 	if v, ok := n.Value.([]interface{}); ok {
 		params = append(params, v...) // Flatten and append all elements
 	} else {

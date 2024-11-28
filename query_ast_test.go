@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+var ageMetadata = FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default"}
+var salaryMetadata = FieldMetadata{FieldName: "salary", IsAllowed: true, DefaultOp: "default"}
+var cityMetadata = FieldMetadata{FieldName: "city", IsAllowed: true, DefaultOp: "default"}
+var hobbiesMetadata = FieldMetadata{FieldName: "hobbiesMetadata", IsAllowed: true, CustomOp: "array_contains"}
+
+var fieldMetadata = []FieldMetadata{
+	ageMetadata,
+	salaryMetadata,
+	cityMetadata,
+	hobbiesMetadata,
+}
+
 func TestParseSQONToAST(t *testing.T) {
 	t.Parallel()
 
@@ -190,7 +202,7 @@ func TestParseSQONtoAST(t *testing.T) {
 					{Op: ">=", Field: "salary", Value: 50000},
 				},
 			},
-			{Op: "in", Field: "clinvar_interpretations", Value: []interface{}{"pathogenic", "likely_pathogenic"}},
+			{Op: "in", Field: "hobbiesMetadata", Value: []interface{}{"soccer", "hiking"}},
 			{
 				Op: "not",
 				Content: []SQON{
@@ -206,10 +218,7 @@ func TestParseSQONtoAST(t *testing.T) {
 	assert.NotEmpty(t, visitedFields)
 
 	expectedFields := []FieldMetadata{
-		{FieldName: "age", IsAllowed: true, DefaultOp: "default"},
-		{FieldName: "salary", IsAllowed: true, DefaultOp: "default"},
-		{FieldName: "clinvar_interpretations", IsAllowed: true, CustomOp: "array_contains"},
-		{FieldName: "city", IsAllowed: true, DefaultOp: "default"},
+		ageMetadata, salaryMetadata, cityMetadata, hobbiesMetadata,
 	}
 	assert.ElementsMatch(t, expectedFields, visitedFields)
 	orNode, ok := ast.(*OrNode)
@@ -234,15 +243,15 @@ func TestParseSQONtoAST(t *testing.T) {
 
 	compNode3, ok := andNode.Children[1].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode1.FieldMetadata, salaryMetadata)
+	assert.Equal(t, compNode3.FieldMetadata, salaryMetadata)
 	assert.Equal(t, ">=", compNode3.Operator)
 	assert.Equal(t, 50000, compNode3.Value)
 
 	compNode4, ok := orNode.Children[2].(*ComparisonNode)
 	assert.True(t, ok)
-	assert.Equal(t, compNode4.FieldMetadata, clinvarMetadata)
+	assert.Equal(t, compNode4.FieldMetadata, hobbiesMetadata)
 	assert.Equal(t, "in", compNode4.Operator)
-	assert.Equal(t, []interface{}{"pathogenic", "likely_pathogenic"}, compNode4.Value)
+	assert.Equal(t, []interface{}{"soccer", "hiking"}, compNode4.Value)
 
 	notNode, ok := orNode.Children[3].(*NotNode)
 	assert.True(t, ok)
@@ -328,6 +337,18 @@ func TestQueryToSQLInSingleValue(t *testing.T) {
 	assert.Equal(t, expectedSQL, sqlQuery)
 	assert.Equal(t, expectedParams, params)
 }
+func TestQueryToSQLInAlias(t *testing.T) {
+	t.Parallel()
+	node := ComparisonNode{Operator: "in", Value: []interface{}{10, 20}, FieldMetadata: FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default", TableAlias: "e"}}
+
+	sqlQuery, params := node.ToSQL()
+
+	expectedSQL := `e.age IN (?, ?)`
+	expectedParams := []interface{}{10, 20}
+
+	assert.Equal(t, expectedSQL, sqlQuery)
+	assert.Equal(t, expectedParams, params)
+}
 func TestQueryToSQLBetween(t *testing.T) {
 	t.Parallel()
 	node := ComparisonNode{Operator: "between", Value: []interface{}{30, 40}, FieldMetadata: ageMetadata}
@@ -351,7 +372,7 @@ func TestQueryCompleteToSQL(t *testing.T) {
 					&ComparisonNode{Operator: ">=", Value: 50000, FieldMetadata: salaryMetadata},
 				},
 			},
-			&ComparisonNode{Operator: "in", Value: []interface{}{"pathogenic", "likely_pathogenic"}, FieldMetadata: clinvarMetadata},
+			&ComparisonNode{Operator: "in", Value: []interface{}{"soccer", "hiking"}, FieldMetadata: hobbiesMetadata},
 			&NotNode{
 				Child: &ComparisonNode{Operator: "not-in", Value: []interface{}{"New York", "Los Angeles"}, FieldMetadata: cityMetadata},
 			},
@@ -360,8 +381,8 @@ func TestQueryCompleteToSQL(t *testing.T) {
 
 	sqlQuery, params := node.ToSQL()
 
-	expectedSQL := `(age IN (?, ?) OR (age IN (?, ?) AND salary >= ?) OR clinvar_interpretations IN (?, ?) OR NOT (city NOT IN (?, ?)))`
-	expectedParams := []interface{}{30, 40, 10, 20, 50000, "pathogenic", "likely_pathogenic", "New York", "Los Angeles"}
+	expectedSQL := `(age IN (?, ?) OR (age IN (?, ?) AND salary >= ?) OR hobbiesMetadata IN (?, ?) OR NOT (city NOT IN (?, ?)))`
+	expectedParams := []interface{}{30, 40, 10, 20, 50000, "soccer", "hiking", "New York", "Los Angeles"}
 
 	assert.Equal(t, expectedSQL, sqlQuery)
 	assert.Equal(t, expectedParams, params)
