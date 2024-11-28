@@ -4,72 +4,9 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
+	"go-poc/models"
 	"testing"
 )
-
-var occurrenceTable = Table{
-	Name:  "occurrences",
-	Alias: "o",
-}
-var variantTable = Table{
-	Name:  "variants",
-	Alias: "v",
-}
-
-var filterField = Field{
-	Name:          "filter",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         occurrenceTable,
-}
-var seqIdField = Field{
-	Name:          "seq_id",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         occurrenceTable,
-}
-var locusIdField = Field{
-	Name:          "locus_id",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         occurrenceTable,
-}
-var zygosityField = Field{
-	Name:          "zygosity",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         occurrenceTable,
-}
-var adRatioField = Field{
-	Name:          "ad_ratio",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         occurrenceTable,
-}
-var pfField = Field{
-	Name:          "pf",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         variantTable,
-}
-var afField = Field{
-	Name:          "af",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         variantTable,
-}
-var variantClassField = Field{
-	Name:          "variant_class",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         variantTable,
-}
-var hgvsgField = Field{
-	Name:          "hgvsg",
-	CanBeSelected: true,
-	CanBeFiltered: true,
-	Table:         variantTable,
-}
 
 func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
@@ -85,7 +22,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 		query := Query{
-			SelectedFields: []Field{seqIdField, locusIdField, filterField, zygosityField, adRatioField, pfField, afField, variantClassField, hgvsgField},
+			SelectedFields: models.OccurrencesFields,
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
@@ -108,7 +45,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 		repo := NewMySQLRepository(db)
 		query := Query{
 
-			SelectedFields: []Field{seqIdField, locusIdField, adRatioField, pfField, afField, variantClassField, filterField},
+			SelectedFields: []Field{models.SeqIdField, models.LocusIdField, models.AdRatioField, models.PfField, models.AfField, models.VariantClassField, models.FilterField},
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
@@ -155,9 +92,9 @@ func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 			Filters: &ComparisonNode{
 				Operator: "in",
 				Value:    "PASS",
-				Field:    filterField,
+				Field:    models.FilterField,
 			},
-			SelectedFields: []Field{seqIdField, locusIdField, zygosityField, adRatioField, pfField, afField, variantClassField, filterField, hgvsgField},
+			SelectedFields: models.OccurrencesFields,
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)

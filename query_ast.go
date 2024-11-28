@@ -127,8 +127,12 @@ func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
 	// Define allowed selectedCols
 	selectedFields := models.FindSelectedFields(fields, selected)
 
-	root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
-	return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields}, err
+	if sqon != nil {
+		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
+		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields}, err
+	} else {
+		return Query{SelectedFields: selectedFields}, nil
+	}
 }
 
 func parseSQONToAST(sqon *SQON, fields *[]Field) (FilterNode, []Field, error) {
