@@ -23,6 +23,17 @@ var (
 	containerStarted   bool
 	once               sync.Once
 )
+var ageMetadata = FieldMetadata{FieldName: "age", IsAllowed: true, DefaultOp: "default"}
+var salaryMetadata = FieldMetadata{FieldName: "salary", IsAllowed: true, DefaultOp: "default"}
+var cityMetadata = FieldMetadata{FieldName: "city", IsAllowed: true, DefaultOp: "default"}
+var clinvarMetadata = FieldMetadata{FieldName: "clinvar_interpretations", IsAllowed: true, CustomOp: "array_contains"}
+
+var fieldMetadata = []FieldMetadata{
+	ageMetadata,
+	salaryMetadata,
+	cityMetadata,
+	clinvarMetadata,
+}
 
 func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *sql.DB)) {
 	t.Parallel()
