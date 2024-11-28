@@ -15,7 +15,7 @@ func (m *MockRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (m *MockRepository) GetOccurrences(int, []string, *Filter, []string) ([]Occurrence, error) {
+func (m *MockRepository) GetOccurrences(int, []string, *Query) ([]Occurrence, error) {
 	return []Occurrence{
 		{
 			SeqId:        1,

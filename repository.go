@@ -10,7 +10,7 @@ import (
 
 type Repository interface {
 	CheckDatabaseConnection() string
-	GetOccurrences(seqId int, selectedCols []string, userFilter *Filter, joinedTables []string) ([]Occurrence, error)
+	GetOccurrences(seqId int, selectedCols []string, userFilter *Query) ([]Occurrence, error)
 	CountOccurrences(seqId int) (int, error)
 }
 
@@ -29,12 +29,7 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-type Filter struct {
-	userFilters string
-	userParams  []interface{}
-}
-
-func (r *MySQLRepository) GetOccurrences(seqId int, selectedCols []string, userFilter *Filter, joinedTables []string) ([]Occurrence, error) {
+func (r *MySQLRepository) GetOccurrences(seqId int, selectedCols []string, userFilter *Query) ([]Occurrence, error) {
 	if len(selectedCols) == 0 || (len(selectedCols) == 1 && selectedCols[0] == "") {
 		selectedCols = []string{"locus_id"}
 	}
@@ -73,11 +68,12 @@ func (r *MySQLRepository) GetOccurrences(seqId int, selectedCols []string, userF
 	)
 
 	if userFilter != nil {
-		query := fmt.Sprintf("SELECT %s FROM occurrences where seq_id = ? and %s", strings.Join(validColumns, ", "), userFilter.userFilters)
-		args := append([]interface{}{seqId}, userFilter.userParams...)
+		filters, params := userFilter.Filters.ToSQL()
+		query := fmt.Sprintf("SELECT %s FROM occurrences o where o.seq_id = ? and %s", strings.Join(validColumns, ", "), filters)
+		args := append([]interface{}{seqId}, params...)
 		rows, err = r.db.Query(query, args...)
 	} else {
-		query := fmt.Sprintf("SELECT %s FROM occurrences where seq_id = ?", strings.Join(validColumns, ", "))
+		query := fmt.Sprintf("SELECT %s FROM occurrences o where o.seq_id = ?", strings.Join(validColumns, ", "))
 		rows, err = r.db.Query(query, seqId)
 	}
 	if err != nil {

@@ -21,7 +21,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 		columns := []string{"seq_id", "locus_id", "filter", "zygosity", "pf", "af", "hgvsg", "ad_ratio", "variant_class"}
-		occurrences, err := repo.GetOccurrences(1, columns, nil, nil)
+		occurrences, err := repo.GetOccurrences(1, columns, nil)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
@@ -41,7 +41,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
 		repo := NewMySQLRepository(db)
 		columns := []string{"seq_id", "locus_id", "filter"}
-		occurrences, err := repo.GetOccurrences(1, columns, nil, nil)
+		occurrences, err := repo.GetOccurrences(1, columns, nil)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
@@ -57,7 +57,7 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 		var columns []string
-		occurrences, err := repo.GetOccurrences(1, columns, nil, nil)
+		occurrences, err := repo.GetOccurrences(1, columns, nil)
 		assert.NoError(t, err)
 		assert.Len(t, occurrences, 1)
 
@@ -82,8 +82,21 @@ func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 		columns := []string{"seq_id", "locus_id", "filter", "zygosity", "pf", "af", "hgvsg", "ad_ratio", "variant_class"}
-		filter := Filter{userFilters: "filter = ?", userParams: []interface{}{"PASS"}}
-		occurrences, err := repo.GetOccurrences(1, columns, &filter, nil)
+		filter := Query{
+			Filters: &ComparisonNode{
+				Operator: "in",
+				Value:    "PASS",
+				FieldMetadata: FieldMetadata{
+					FieldName:  "filter",
+					IsAllowed:  true,
+					CustomOp:   "",
+					DefaultOp:  "",
+					TableName:  "",
+					TableAlias: "",
+				},
+			},
+		}
+		occurrences, err := repo.GetOccurrences(1, columns, &filter)
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)

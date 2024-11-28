@@ -26,7 +26,7 @@ func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 			return
 		}
-		occurrences, err := repo.GetOccurrences(seqID, columns, nil, nil)
+		occurrences, err := repo.GetOccurrences(seqID, columns, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

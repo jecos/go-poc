@@ -6,36 +6,35 @@ import (
 	"strings"
 )
 
-type Node interface {
+type FilterNode interface {
 	ToSQL() (string, []interface{})
 }
-type NodeWithChildren interface {
+type FilterNodeWithChildren interface {
 	ToSQL() (string, []interface{})
-	GetChildren() []Node
+	GetChildren() []FilterNode
 }
 
 type AndNode struct {
-	Children []Node
+	Children []FilterNode
 }
 
-func (n *AndNode) GetChildren() []Node {
+func (n *AndNode) GetChildren() []FilterNode {
 	return n.Children
 }
 
 type OrNode struct {
-	Children []Node
+	Children []FilterNode
 }
 
-func (n *OrNode) GetChildren() []Node {
+func (n *OrNode) GetChildren() []FilterNode {
 	return n.Children
 }
 
 type NotNode struct {
-	Child Node
+	Child FilterNode
 }
 
 type ComparisonNode struct {
-	Field         string
 	Operator      string
 	Value         interface{}
 	FieldMetadata FieldMetadata
@@ -49,7 +48,7 @@ func (n *OrNode) ToSQL() (string, []interface{}) {
 	return childrenToSQL(n, "OR")
 }
 
-func childrenToSQL(n NodeWithChildren, op string) (string, []interface{}) {
+func childrenToSQL(n FilterNodeWithChildren, op string) (string, []interface{}) {
 	children := n.GetChildren()
 	parts := make([]string, len(children))
 	var newParams []interface{}
@@ -108,7 +107,17 @@ func placeholders(count int) string {
 	return strings.TrimSuffix(strings.Repeat("?, ", count), ", ")
 }
 
-func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (Node, []FieldMetadata, error) {
+type Query struct {
+	Filters      FilterNode
+	UsedMetadata []FieldMetadata
+}
+
+func ParseSQON(sqon *SQON, metadata *[]FieldMetadata) (Query, error) {
+	root, visitedMeta, err := parseSQONToAST(sqon, metadata)
+	return Query{Filters: root, UsedMetadata: visitedMeta}, err
+}
+
+func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (FilterNode, []FieldMetadata, error) {
 	if sqon.Field != "" && sqon.Content != nil {
 		return nil, nil, fmt.Errorf("a sqon cannot have both content and field defined: %s", sqon.Field)
 	}
@@ -118,7 +127,7 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (Node, []FieldMetadat
 		if len(sqon.Content) == 1 { // Flatten single child AND/OR nodes
 			return parseSQONToAST(&sqon.Content[0], metadata)
 		}
-		children := make([]Node, len(sqon.Content))
+		children := make([]FilterNode, len(sqon.Content))
 		var newVisitedFields []FieldMetadata
 		for i, item := range sqon.Content {
 			child, meta, err := parseSQONToAST(&item, metadata)
@@ -170,7 +179,6 @@ func parseSQONToAST(sqon *SQON, metadata *[]FieldMetadata) (Node, []FieldMetadat
 		}
 
 		return &ComparisonNode{
-			Field:         sqon.Field,
 			Operator:      sqon.Op,
 			Value:         sqon.Value,
 			FieldMetadata: *meta,
