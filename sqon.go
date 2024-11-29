@@ -7,13 +7,13 @@ type SQON struct {
 	Op      string      `json:"op,omitempty"`      // Operation at this node
 }
 
-type ListQuery struct {
+type ListBody struct {
 	SelectedFields []string `json:"selected_fields"`
 	SQON           *SQON    `json:"sqon"`
 	Limit          int64    `json:"limit"`
 	Offset         int64    `json:"offset"`
 }
 
-type CountQuery struct {
+type CountBody struct {
 	SQON *SQON `json:"sqon"`
 }

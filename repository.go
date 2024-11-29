@@ -55,7 +55,6 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 			Select(columns).
 			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx).
 			Find(&occurrences).Error
-
 	} else {
 		err = tx.Select(columns).Limit(10).Find(&occurrences).Error
 	}

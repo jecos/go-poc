@@ -19,17 +19,17 @@ func statusHandler(repo Repository) gin.HandlerFunc {
 func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			q     ListQuery
+			body  ListBody
 			query Query
 		)
 
 		// Bind JSON to the struct
-		if err := c.ShouldBindJSON(&q); err != nil {
+		if err := c.ShouldBindJSON(&body); err != nil {
 			// Return a 400 Bad Request if validation fails
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		query, err := BuildQuery(q.SelectedFields, q.SQON, &models.OccurrencesFields)
+		query, err := BuildQuery(body.SelectedFields, body.SQON, &models.OccurrencesFields)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -52,17 +52,17 @@ func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			q     CountQuery
+			body  CountBody
 			query Query
 		)
 
 		// Bind JSON to the struct
-		if err := c.ShouldBindJSON(&q); err != nil {
+		if err := c.ShouldBindJSON(&body); err != nil {
 			// Return a 400 Bad Request if validation fails
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		query, err := BuildQuery(nil, q.SQON, &models.OccurrencesFields)
+		query, err := BuildQuery(nil, body.SQON, &models.OccurrencesFields)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

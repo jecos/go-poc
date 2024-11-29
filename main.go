@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Initialize database connection
-	db, err := initDB(config)
+	db, err := initDB()
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
