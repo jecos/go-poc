@@ -81,7 +81,7 @@ func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *Query) (int64, 
 	var count int64
 	err := tx.Count(&count).Error
 	if err != nil {
-		log.Fatal("error fetching users:", err)
+		log.Print("error fetching users:", err)
 	}
 	return count, err
 }
