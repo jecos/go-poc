@@ -77,9 +77,30 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 func TestMySQLRepository_CountOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := NewMySQLRepository(db)
-		count, err := repo.CountOccurrences(1)
+		count, err := repo.CountOccurrences(1, nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, count)
+	})
+}
+
+func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
+	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
+
+		repo := NewMySQLRepository(db)
+
+		query := Query{
+			Filters: &ComparisonNode{
+				Operator: "in",
+				Value:    "PASS",
+				Field:    models.FilterField,
+			},
+			SelectedFields: models.OccurrencesFields,
+		}
+		c, err := repo.CountOccurrences(1, &query)
+
+		if assert.NoError(t, err) {
+			assert.EqualValues(t, 1, c)
+		}
 	})
 }
 

@@ -44,7 +44,7 @@ func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 			return
 		}
-		count, err := repo.CountOccurrences(seqID)
+		count, err := repo.CountOccurrences(seqID, nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

@@ -11,7 +11,7 @@ import (
 type Repository interface {
 	CheckDatabaseConnection() string
 	GetOccurrences(seqId int, userFilter *Query) ([]Occurrence, error)
-	CountOccurrences(seqId int) (int64, error)
+	CountOccurrences(seqId int, userQuery *Query) (int64, error)
 }
 
 type MySQLRepository struct {
@@ -37,31 +37,37 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 }
 
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurrence, error) {
+	tx := buildQuery(seqId, userQuery, r)
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field Field, index int, slice []Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.Name)
 	})
 	if columns == nil {
 		columns = []string{"o.locus_id"}
 	}
-
-	tx := r.db.Table("occurrences o").Select(columns).Where("o.seq_id = ?", seqId)
-	if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
-		tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
-	}
-
-	if userQuery.Filters != nil {
-		filters, params := userQuery.Filters.ToSQL()
-		//args := append([]interface{}{seqId}, params...)
-		tx.Where(filters, params...)
-
-	}
 	var occurrences []Occurrence
-	err := tx.Find(&occurrences).Error
+	err := tx.Select(columns).Find(&occurrences).Error
 	if err != nil {
 		log.Fatal("error fetching users:", err)
 	}
 
 	return occurrences, err
+}
+
+func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) *gorm.DB {
+
+	tx := r.db.Table("occurrences o").Where("o.seq_id = ?", seqId)
+	if userQuery != nil {
+		if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
+			tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
+		}
+
+		if userQuery.Filters != nil {
+			filters, params := userQuery.Filters.ToSQL()
+			tx.Where(filters, params...)
+
+		}
+	}
+	return tx
 }
 
 func hasFieldFromTable(fields []Field, table Table) bool {
@@ -70,9 +76,10 @@ func hasFieldFromTable(fields []Field, table Table) bool {
 	})
 }
 
-func (r *MySQLRepository) CountOccurrences(seqId int) (int64, error) {
+func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *Query) (int64, error) {
+	tx := buildQuery(seqId, userQuery, r)
 	var count int64
-	err := r.db.Table("occurrences o").Where("o.seq_id = ?", seqId).Count(&count).Error
+	err := tx.Count(&count).Error
 	if err != nil {
 		log.Fatal("error fetching users:", err)
 	}
