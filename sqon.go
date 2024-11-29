@@ -11,6 +11,13 @@ type SQON struct {
 	Op      string      `json:"op,omitempty"`      // Operation at this node
 }
 
+type ListQuery struct {
+	SelectedFields []string `json:"selected_fields"`
+	SQON           *SQON    `json:"sqon"`
+	Limit          int64    `json:"limit"`
+	Offset         int64    `json:"offset"`
+}
+
 // Parse - parses a JSON string into an SQON structure and collects metadata for visited fields.
 func Parse(jsonData string) (*SQON, error) {
 	var sqon SQON

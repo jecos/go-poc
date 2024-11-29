@@ -5,7 +5,6 @@ import (
 	"go-poc/models"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 func statusHandler(repo Repository) gin.HandlerFunc {
@@ -19,9 +18,22 @@ func statusHandler(repo Repository) gin.HandlerFunc {
 
 func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		columnsParam := c.Query("columns")
-		columns := strings.Split(columnsParam, ",")
-		query, _ := BuildQuery(columns, nil, &models.OccurrencesFields)
+		var (
+			q     ListQuery
+			query Query
+		)
+
+		// Bind JSON to the struct
+		if err := c.ShouldBindJSON(&q); err != nil {
+			// Return a 400 Bad Request if validation fails
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		query, err := BuildQuery(q.SelectedFields, q.SQON, &models.OccurrencesFields)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		seqID, err := strconv.Atoi(c.Param("seq_id"))
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})

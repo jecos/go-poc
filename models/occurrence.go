@@ -2,7 +2,7 @@ package models
 
 type Occurrence struct {
 	SeqId                 int     `json:"seq_id,omitempty"`
-	LocusId               string  `json:"locus_id,omitempty"`
+	LocusId               int64   `json:"locus_id,omitempty"`
 	Quality               int     `json:"quality,omitempty"`
 	Filter                string  `json:"filter,omitempty"`
 	Zygosity              string  `json:"zygosity,omitempty"`

@@ -28,7 +28,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "1000", occurrences[0].LocusId)
+			assert.EqualValues(t, 1000, occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Equal(t, "HET", occurrences[0].Zygosity)
 			assert.Equal(t, 0.99, occurrences[0].Pf)
@@ -51,7 +51,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "1000", occurrences[0].LocusId)
+			assert.EqualValues(t, 1000, occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Empty(t, occurrences[0].VepImpact)
 		}
@@ -68,7 +68,7 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 		assert.Len(t, occurrences, 1)
 
 		if assert.Len(t, occurrences, 1) {
-			assert.Equal(t, "1000", occurrences[0].LocusId)
+			assert.EqualValues(t, 1000, occurrences[0].LocusId)
 			assert.Empty(t, occurrences[0].Filter)
 		}
 	})
@@ -121,7 +121,7 @@ func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 		assert.NoError(t, err)
 		if assert.Len(t, occurrences, 1) {
 			assert.Equal(t, 1, occurrences[0].SeqId)
-			assert.Equal(t, "1000", occurrences[0].LocusId)
+			assert.EqualValues(t, 1000, occurrences[0].LocusId)
 			assert.Equal(t, "PASS", occurrences[0].Filter)
 			assert.Equal(t, "HET", occurrences[0].Zygosity)
 			assert.Equal(t, 0.99, occurrences[0].Pf)
