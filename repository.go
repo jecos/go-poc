@@ -43,7 +43,7 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 		return nil, err
 	}
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field Field, index int, slice []Field) string {
-		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.Name)
+		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.GetAlias())
 	})
 	if columns == nil {
 		columns = []string{"o.locus_id"}
