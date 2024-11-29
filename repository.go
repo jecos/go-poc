@@ -45,7 +45,7 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 		columns = []string{"o.locus_id"}
 	}
 	var occurrences []Occurrence
-	err := tx.Select(columns).Find(&occurrences).Error
+	err := tx.Select(columns).Limit(10).Find(&occurrences).Error
 	if err != nil {
 		log.Fatal("error fetching users:", err)
 	}
