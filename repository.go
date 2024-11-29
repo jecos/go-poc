@@ -45,9 +45,7 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 	}
 
 	tx := r.db.Table("occurrences o").Select(columns).Where("o.seq_id = ?", seqId)
-	if sliceutils.Some(userQuery.SelectedFields, func(field Field, index int, slice []Field) bool {
-		return field.Table == models.VariantTable
-	}) {
+	if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
 		tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
 	}
 
@@ -64,6 +62,12 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 	}
 
 	return occurrences, err
+}
+
+func hasFieldFromTable(fields []Field, table Table) bool {
+	return sliceutils.Some(fields, func(field Field, index int, slice []Field) bool {
+		return field.Table == table
+	})
 }
 
 func (r *MySQLRepository) CountOccurrences(seqId int) (int64, error) {
