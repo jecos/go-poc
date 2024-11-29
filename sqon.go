@@ -18,6 +18,10 @@ type ListQuery struct {
 	Offset         int64    `json:"offset"`
 }
 
+type CountQuery struct {
+	SQON *SQON `json:"sqon"`
+}
+
 // Parse - parses a JSON string into an SQON structure and collects metadata for visited fields.
 func Parse(jsonData string) (*SQON, error) {
 	var sqon SQON

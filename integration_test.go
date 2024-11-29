@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -22,6 +23,20 @@ func testList(t *testing.T, data string, body string, expected string) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.JSONEq(t, expected, w.Body.String())
+	})
+}
+func testCount(t *testing.T, data string, body string, expected int) {
+	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
+		repo := NewMySQLRepository(db)
+		router := gin.Default()
+		router.POST("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
+
+		req, _ := http.NewRequest("POST", "/occurrences/1/count", bytes.NewBufferString(body))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.JSONEq(t, fmt.Sprintf(`{"count":%d}`, expected), w.Body.String())
 	})
 }
 
@@ -46,16 +61,19 @@ func TestIntegrationOccurrencesListSqon(t *testing.T) {
 }
 
 func TestIntegrationOccurrencesCount(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
-		router := gin.Default()
-		router.GET("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
+	testCount(t, "simple", "{}", 1)
 
-		req, _ := http.NewRequest("GET", "/occurrences/1/count", nil)
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.JSONEq(t, `{"count":1}`, w.Body.String())
-	})
+}
+func TestIntegrationCountSqon(t *testing.T) {
+	body := `{
+			"selected_fields":[
+				"seq_id","locus_id","filter","zygosity","pf","af","hgvsg","ad_ratio","variant_class"
+			],
+			"sqon":{
+				"op":"in",
+				"field": "filter",
+				"value": "PASS"
+		}
+		}`
+	testCount(t, "multiple", body, 1)
 }

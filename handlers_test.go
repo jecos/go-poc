@@ -79,9 +79,9 @@ func TestOccurrencesListHandler(t *testing.T) {
 func TestOccurrencesCountHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
-	router.GET("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
+	router.POST("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
 
-	req, _ := http.NewRequest("GET", "/occurrences/1/count", nil)
+	req, _ := http.NewRequest("POST", "/occurrences/1/count", bytes.NewBuffer([]byte("{}")))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
