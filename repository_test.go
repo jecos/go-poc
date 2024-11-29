@@ -1,15 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"go-poc/models"
+	"gorm.io/gorm"
 	"testing"
 )
 
 func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := NewMySQLRepository(db)
 		status := repo.CheckDatabaseConnection()
 		assert.Equal(t, "up", status)
@@ -18,7 +18,7 @@ func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 }
 
 func TestMySQLRepository_GetOccurrences(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := NewMySQLRepository(db)
 		query := Query{
@@ -41,7 +41,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 }
 
 func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := NewMySQLRepository(db)
 		query := Query{
 
@@ -59,7 +59,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 }
 
 func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := NewMySQLRepository(db)
 		query := Query{}
@@ -75,16 +75,16 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 }
 
 func TestMySQLRepository_CountOccurrences(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := NewMySQLRepository(db)
 		count, err := repo.CountOccurrences(1)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, count)
+		assert.EqualValues(t, 1, count)
 	})
 }
 
 func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
-	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *sql.DB) {
+	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
 		repo := NewMySQLRepository(db)
 

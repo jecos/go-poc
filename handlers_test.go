@@ -31,7 +31,7 @@ func (m *MockRepository) GetOccurrences(int, *Query) ([]Occurrence, error) {
 	}, nil
 }
 
-func (m *MockRepository) CountOccurrences(int) (int, error) {
+func (m *MockRepository) CountOccurrences(int) (int64, error) {
 	return 15, nil
 }
 

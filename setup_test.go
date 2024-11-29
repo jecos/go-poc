@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -23,7 +25,7 @@ var (
 	once               sync.Once
 )
 
-func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *sql.DB)) {
+func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *gorm.DB)) {
 	t.Parallel()
 	db, dbName, err := initDb(dbName)
 	if err != nil {
@@ -32,17 +34,10 @@ func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T,
 	}
 	testFunc(t, db)
 	//Drop database
-	_, err = db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
-	if err != nil {
-		fmt.Errorf("Failed to drop database: %v\n", err)
-	}
-	err = db.Close()
-	if err != nil {
-		fmt.Errorf("Failed to close db connection: %v\n", err)
-		os.Exit(1)
-	}
+	db.Exec(fmt.Sprintf("DROP DATABASE %s;", dbName))
+
 }
-func initDb(folderName string) (*sql.DB, string, error) {
+func initDb(folderName string) (*gorm.DB, string, error) {
 	ctx := context.Background()
 	host, err := starrocksContainer.Host(ctx)
 	if err != nil {
@@ -55,7 +50,9 @@ func initDb(folderName string) (*sql.DB, string, error) {
 	}
 
 	dsn := fmt.Sprintf("root:@tcp(%s:%s)/?interpolateParams=true", host, port.Port())
-	db, err := sql.Open("mysql", dsn)
+	gormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	var db *sql.DB
+	db, err = gormDb.DB()
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to connect to StarRocks: %v", err)
 	}
@@ -86,7 +83,7 @@ func initDb(folderName string) (*sql.DB, string, error) {
 		}
 	}
 
-	return db, dbName, nil
+	return gormDb, dbName, nil
 }
 
 func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry) error {

@@ -1,29 +1,34 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func initDB(cfg Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		cfg.DBUsername, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
-	db, err := sql.Open("mysql", dsn)
+func initDB(cfg Config) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?interpolateParams=true",
+		config.DBUsername, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Set connection pool parameters
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxLifetime(5 * time.Minute)
-
-	if err := db.Ping(); err != nil {
+	sqlDB, err := db.DB()
+	if err != nil {
 		return nil, err
 	}
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns sets the maximum number of open connections to the database.
+	sqlDB.SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
 }
