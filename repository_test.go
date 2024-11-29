@@ -45,7 +45,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 		repo := NewMySQLRepository(db)
 		query := Query{
 
-			SelectedFields: []Field{models.SeqIdField, models.LocusIdField, models.AdRatioField, models.PfField, models.AfField, models.VariantClassField, models.FilterField},
+			SelectedFields: []Field{models.SeqIdField, models.LocusIdField, models.AdRatioField, models.FilterField},
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)

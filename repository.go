@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/Goldziher/go-utils/sliceutils"
+	"go-poc/models"
 	"gorm.io/gorm"
 	"log"
 )
@@ -43,8 +44,12 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 		columns = []string{"o.locus_id"}
 	}
 
-	tx := r.db.Table("occurrences o").Joins("JOIN variants v ON v.locus_id=o.locus_id").
-		Select(columns).Where("o.seq_id = ?", seqId)
+	tx := r.db.Table("occurrences o").Select(columns).Where("o.seq_id = ?", seqId)
+	if sliceutils.Some(userQuery.SelectedFields, func(field Field, index int, slice []Field) bool {
+		return field.Table == models.VariantTable
+	}) {
+		tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
+	}
 
 	if userQuery.Filters != nil {
 		filters, params := userQuery.Filters.ToSQL()
@@ -53,14 +58,19 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 
 	}
 	var occurrences []Occurrence
-	tx.Find(&occurrences)
+	err := tx.Find(&occurrences).Error
+	if err != nil {
+		log.Fatal("error fetching users:", err)
+	}
 
-	return occurrences, nil
+	return occurrences, err
 }
 
 func (r *MySQLRepository) CountOccurrences(seqId int) (int64, error) {
 	var count int64
-	r.db.Table("occurrences o").Where("o.seq_id = ?", seqId).Count(&count)
-
-	return count, nil
+	err := r.db.Table("occurrences o").Where("o.seq_id = ?", seqId).Count(&count).Error
+	if err != nil {
+		log.Fatal("error fetching users:", err)
+	}
+	return count, err
 }

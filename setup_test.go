@@ -9,6 +9,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -50,7 +51,7 @@ func initDb(folderName string) (*gorm.DB, string, error) {
 	}
 
 	dsn := fmt.Sprintf("root:@tcp(%s:%s)/?interpolateParams=true", host, port.Port())
-	gormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	gormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 	var db *sql.DB
 	db, err = gormDb.DB()
 	if err != nil {
