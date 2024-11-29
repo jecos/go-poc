@@ -38,7 +38,7 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurrence, error) {
 
-	tx, _, err := buildQuery(seqId, userQuery, r)
+	tx, part, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,16 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 		columns = []string{"o.locus_id"}
 	}
 	var occurrences []Occurrence
-	err = tx.Select(columns).Limit(10).Find(&occurrences).Error
+	if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
+		tx = tx.Select("o.locus_id").Limit(10)
+		err = r.db.Table("occurrences o, variants v").
+			Select(columns).
+			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx).
+			Find(&occurrences).Error
+
+	} else {
+		err = tx.Select(columns).Limit(10).Find(&occurrences).Error
+	}
 	if err != nil {
 		log.Println("error fetching occurrences:", err)
 	}
