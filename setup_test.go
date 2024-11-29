@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -30,8 +31,8 @@ func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T,
 	t.Parallel()
 	db, dbName, err := initDb(dbName)
 	if err != nil {
-		fmt.Errorf("Failed to init db connection: %v\n", err)
-		os.Exit(1)
+		log.Fatal("Failed to init db connection:", err)
+
 	}
 	testFunc(t, db)
 	//Drop database
@@ -42,12 +43,12 @@ func initDb(folderName string) (*gorm.DB, string, error) {
 	ctx := context.Background()
 	host, err := starrocksContainer.Host(ctx)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get container host: %v", err)
+		log.Fatal("failed to get container host: ", err)
 	}
 
 	port, err := starrocksContainer.MappedPort(ctx, "9030")
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get container port: %v", err)
+		log.Fatal("failed to get container port: ", err)
 	}
 
 	dsn := fmt.Sprintf("root:@tcp(%s:%s)/?interpolateParams=true", host, port.Port())
@@ -55,31 +56,32 @@ func initDb(folderName string) (*gorm.DB, string, error) {
 	var db *sql.DB
 	db, err = gormDb.DB()
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to connect to StarRocks: %v", err)
+		log.Fatal("failed to connect to StarRocks", err)
+		return nil, "", nil
 	}
 
 	// Create a database with the name of the folder and a random number
 	dbName := fmt.Sprintf("%s_%d", folderName, rand.Intn(1000000))
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", dbName))
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to create database: %v", err)
+		log.Fatal("failed to create database", err)
 	}
 	_, err = db.Exec(fmt.Sprintf("USE %s;", dbName))
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to use database: %v", err)
+		log.Fatal("failed to use database", err)
 	}
 
 	// Read the list of .tsv files in the folder
 	files, err := os.ReadDir(filepath.Join("test_resources", folderName))
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read directory: %v", err)
+		log.Fatal("failed to read directory test_resoures", err)
 	}
 
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".tsv" {
 			err = createTableAndPopulateData(db, folderName, file)
 			if err != nil {
-				return nil, "", fmt.Errorf("failed to create table and populate data: %v", err)
+				log.Fatal("failed to create table and populate data", err)
 			}
 		}
 	}

@@ -31,7 +31,7 @@ func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 		}
 		query, err := BuildQuery(q.SelectedFields, q.SQON, &models.OccurrencesFields)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		seqID, err := strconv.Atoi(c.Param("seq_id"))
@@ -64,7 +64,7 @@ func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
 		}
 		query, err := BuildQuery(nil, q.SQON, &models.OccurrencesFields)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		seqID, err := strconv.Atoi(c.Param("seq_id"))

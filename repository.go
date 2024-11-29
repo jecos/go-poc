@@ -37,7 +37,11 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 }
 
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurrence, error) {
-	tx := buildQuery(seqId, userQuery, r)
+
+	tx, _, err := buildQuery(seqId, userQuery, r)
+	if err != nil {
+		return nil, err
+	}
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field Field, index int, slice []Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.Name)
 	})
@@ -45,17 +49,21 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 		columns = []string{"o.locus_id"}
 	}
 	var occurrences []Occurrence
-	err := tx.Select(columns).Limit(10).Find(&occurrences).Error
+	err = tx.Select(columns).Limit(10).Find(&occurrences).Error
 	if err != nil {
-		log.Fatal("error fetching users:", err)
+		log.Println("error fetching occurrences:", err)
 	}
 
 	return occurrences, err
+
 }
 
-func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) *gorm.DB {
-
-	tx := r.db.Table("occurrences o").Where("o.seq_id = ?", seqId)
+func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) (*gorm.DB, int, error) {
+	part, err := r.GetPart(seqId)
+	if err != nil {
+		return nil, 0, err
+	}
+	tx := r.db.Table("occurrences o").Where("o.seq_id = ? and part=? and has_alt", seqId, part)
 	if userQuery != nil {
 		if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
 			tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
@@ -67,7 +75,7 @@ func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) *gorm.DB {
 
 		}
 	}
-	return tx
+	return tx, part, nil
 }
 
 func hasFieldFromTable(fields []Field, table Table) bool {
@@ -77,11 +85,25 @@ func hasFieldFromTable(fields []Field, table Table) bool {
 }
 
 func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *Query) (int64, error) {
-	tx := buildQuery(seqId, userQuery, r)
-	var count int64
-	err := tx.Count(&count).Error
+	tx, _, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
-		log.Print("error fetching users:", err)
+		return 0, err
+	}
+	var count int64
+	err = tx.Count(&count).Error
+	if err != nil {
+		log.Print("error fetching occurrences:", err)
 	}
 	return count, err
+
+}
+
+func (r *MySQLRepository) GetPart(seqId int) (int, error) { //TODO cache
+	tx := r.db.Table("sequencing_experiment").Where("seq_id = ?", seqId).Select("part")
+	var part int
+	err := tx.Scan(&part).Error
+	if err != nil {
+		log.Print("error fetching part:", err)
+	}
+	return part, err
 }
