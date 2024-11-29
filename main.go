@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+type Aggregation = models.Aggregation
 type Occurrence = models.Occurrence
 type Field = models.Field
 type Table = models.Table
@@ -32,6 +33,7 @@ func main() {
 	r.GET("/status", statusHandler(repo))
 	r.POST("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
 	r.POST("/occurrences/:seq_id/list", occurrencesListHandler(repo))
+	r.POST("/occurrences/:seq_id/aggregate", occurrencesAggregateHandler(repo))
 
 	r.Run(":8080")
 }

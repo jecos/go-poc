@@ -17,3 +17,9 @@ type ListBody struct {
 type CountBody struct {
 	SQON *SQON `json:"sqon"`
 }
+
+type AggregationBody struct {
+	Field string
+	SQON  *SQON
+	Size  int
+}

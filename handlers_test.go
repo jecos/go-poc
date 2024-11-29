@@ -36,6 +36,14 @@ func (m *MockRepository) CountOccurrences(int, *Query) (int64, error) {
 	return 15, nil
 }
 
+func (m *MockRepository) AggregateOccurrences(int, *Query) ([]Aggregation, error) {
+	return []Aggregation{
+			{Bucket: "HET", Count: 2},
+			{Bucket: "HOM", Count: 1},
+		},
+		nil
+}
+
 func TestStatusHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
@@ -87,4 +95,27 @@ func TestOccurrencesCountHandler(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{"count":15}`, w.Body.String())
+}
+
+func TestOccurrencesAggregateHandler(t *testing.T) {
+	repo := &MockRepository{}
+	router := gin.Default()
+	router.POST("/occurrences/:seq_id/aggregate", occurrencesAggregateHandler(repo))
+
+	body := `{
+			"field": "zygosity",
+			"sqon":{
+				"op":"in",
+				"field": "filter",
+				"value": "PASS"
+		    },
+			"size": 10
+	}`
+	req, _ := http.NewRequest("POST", "/occurrences/1/aggregate", bytes.NewBuffer([]byte(body)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	expected := `[{"key": "HET", "count": 2}, {"key": "HOM", "count": 1}]`
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, expected, w.Body.String())
 }

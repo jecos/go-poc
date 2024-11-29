@@ -12,6 +12,7 @@ type Repository interface {
 	CheckDatabaseConnection() string
 	GetOccurrences(seqId int, userFilter *Query) ([]Occurrence, error)
 	CountOccurrences(seqId int, userQuery *Query) (int64, error)
+	AggregateOccurrences(seqId int, userQuery *Query) ([]Aggregation, error)
 }
 
 type MySQLRepository struct {
@@ -114,4 +115,19 @@ func (r *MySQLRepository) GetPart(seqId int) (int, error) { //TODO cache
 		log.Print("error fetching part:", err)
 	}
 	return part, err
+}
+
+func (r *MySQLRepository) AggregateOccurrences(seqId int, userQuery *Query) ([]Aggregation, error) {
+	tx, _, err := buildQuery(seqId, userQuery, r)
+	if err != nil {
+		return nil, err
+	}
+	var aggregation []Aggregation
+	aggCol := userQuery.SelectedFields[0].Name
+	sel := fmt.Sprintf("%s as bucket, count(1) as count", aggCol)
+	err = tx.Select(sel).Group(aggCol).Find(&aggregation).Error
+	if err != nil {
+		log.Print("error aggregation:", err)
+	}
+	return aggregation, err
 }

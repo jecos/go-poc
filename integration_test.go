@@ -39,6 +39,20 @@ func testCount(t *testing.T, data string, body string, expected int) {
 		assert.JSONEq(t, fmt.Sprintf(`{"count":%d}`, expected), w.Body.String())
 	})
 }
+func testAggregation(t *testing.T, data string, body string, expected string) {
+	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
+		repo := NewMySQLRepository(db)
+		router := gin.Default()
+		router.POST("/occurrences/:seq_id/aggregate", occurrencesAggregateHandler(repo))
+
+		req, _ := http.NewRequest("POST", "/occurrences/1/aggregate", bytes.NewBufferString(body))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.JSONEq(t, expected, w.Body.String())
+	})
+}
 
 func TestIntegrationOccurrencesList(t *testing.T) {
 	testList(t, "simple", "{}", `[{"locus_id":1000}]`)
@@ -73,7 +87,21 @@ func TestIntegrationCountSqon(t *testing.T) {
 				"op":"in",
 				"field": "filter",
 				"value": "PASS"
-		}
+		    }
 		}`
 	testCount(t, "multiple", body, 1)
+}
+
+func TestIntegrationAggregation(t *testing.T) {
+	body := `{
+			"field": "zygosity",
+			"sqon":{
+				"op":"in",
+				"field": "filter",
+				"value": "PASS"
+		    },
+			"size": 10
+		}`
+	expected := `[{"key": "HET", "count": 2}, {"key": "HOM", "count": 1}]`
+	testAggregation(t, "aggregation", body, expected)
 }
