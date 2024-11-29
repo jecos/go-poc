@@ -1,9 +1,5 @@
 package main
 
-import (
-	"encoding/json"
-)
-
 type SQON struct {
 	Field   string      `json:"field,omitempty"`   // Field to filter on (for leaf nodes)
 	Value   interface{} `json:"value,omitempty"`   // Value(s) for the filter
@@ -20,10 +16,4 @@ type ListQuery struct {
 
 type CountQuery struct {
 	SQON *SQON `json:"sqon"`
-}
-
-// Parse - parses a JSON string into an SQON structure and collects metadata for visited fields.
-func Parse(jsonData string) (*SQON, error) {
-	var sqon SQON
-	return &sqon, json.Unmarshal([]byte(jsonData), &sqon)
 }

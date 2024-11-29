@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
+func parse(jsonData string) (*SQON, error) {
+	var sqon SQON
+	return &sqon, json.Unmarshal([]byte(jsonData), &sqon)
+}
 func TestParseSQON(t *testing.T) {
 	t.Parallel()
 	jsonData := `{
@@ -23,7 +28,7 @@ func TestParseSQON(t *testing.T) {
 		]
 	}`
 
-	sqon, err := Parse(jsonData)
+	sqon, err := parse(jsonData)
 	assert.NoError(t, err)
 	assert.NotNil(t, sqon)
 }
