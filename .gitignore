@@ -37,10 +37,8 @@ Thumbs.db
 go.sum
 
 # binary
-go-poc
-# air toml
-.air.toml
+bin/
+
 
 #config
-config.json
 .env

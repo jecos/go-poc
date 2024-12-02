@@ -21,7 +21,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/status2", server.StatusHandler(repo))
+	r.GET("/status", server.StatusHandler(repo))
 	r.POST("/occurrences/:seq_id/count", server.OccurrencesCountHandler(repo))
 	r.POST("/occurrences/:seq_id/list", server.OccurrencesListHandler(repo))
 	r.POST("/occurrences/:seq_id/aggregate", server.OccurrencesAggregateHandler(repo))
