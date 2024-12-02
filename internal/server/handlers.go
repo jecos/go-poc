@@ -2,13 +2,13 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-poc/internal/data"
+	"go-poc/internal/repository"
 	"go-poc/internal/types"
 	"net/http"
 	"strconv"
 )
 
-func StatusHandler(repo data.Repository) gin.HandlerFunc {
+func StatusHandler(repo repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		status := repo.CheckDatabaseConnection()
 		c.JSON(http.StatusOK, gin.H{
@@ -17,7 +17,7 @@ func StatusHandler(repo data.Repository) gin.HandlerFunc {
 	}
 }
 
-func OccurrencesListHandler(repo data.Repository) gin.HandlerFunc {
+func OccurrencesListHandler(repo repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
 			body  types.ListBody
@@ -50,7 +50,7 @@ func OccurrencesListHandler(repo data.Repository) gin.HandlerFunc {
 	}
 }
 
-func OccurrencesCountHandler(repo data.Repository) gin.HandlerFunc {
+func OccurrencesCountHandler(repo repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
 			body  types.CountBody
@@ -82,7 +82,7 @@ func OccurrencesCountHandler(repo data.Repository) gin.HandlerFunc {
 	}
 }
 
-func OccurrencesAggregateHandler(repo data.Repository) gin.HandlerFunc {
+func OccurrencesAggregateHandler(repo repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
 			body  types.AggregationBody

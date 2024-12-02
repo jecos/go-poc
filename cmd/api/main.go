@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"go-poc/internal/config"
-	"go-poc/internal/data"
 	"go-poc/internal/database"
+	"go-poc/internal/repository"
 	"go-poc/internal/server"
 	"log"
 )
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	// Create repository
-	repo := data.NewMySQLRepository(db)
+	repo := repository.NewMySQLRepository(db)
 
 	r := gin.Default()
 

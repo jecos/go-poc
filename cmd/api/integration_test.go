@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	data2 "go-poc/internal/data"
+	data2 "go-poc/internal/repository"
 	"go-poc/internal/server"
 	"gorm.io/gorm"
 	"net/http"
