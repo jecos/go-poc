@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
+func TestCheckDatabaseConnection(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		status := repo.CheckDatabaseConnection()
@@ -17,7 +17,7 @@ func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_GetOccurrences(t *testing.T) {
+func TestGetOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
@@ -40,7 +40,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
+func TestGetOccurrencesWithPartialColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		query := types.Query{
@@ -58,7 +58,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
+func TestGetOccurrencesWithNoColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
@@ -74,7 +74,7 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_CountOccurrences(t *testing.T) {
+func TestCountOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		count, err := repo.CountOccurrences(1, nil)
@@ -83,7 +83,7 @@ func TestMySQLRepository_CountOccurrences(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
+func TestCountOccurrencesFilter(t *testing.T) {
 	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
@@ -104,7 +104,7 @@ func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
 	})
 }
 
-func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
+func TestGetOccurrencesFilter(t *testing.T) {
 	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
