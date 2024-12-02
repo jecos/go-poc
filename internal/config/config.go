@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -13,14 +13,14 @@ type Config struct {
 	DBName     string `json:"db_name"`
 }
 
-var config Config
+var Conf Config
 
-func loadConfig(filename string) error {
+func LoadConfig(filename string) error {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(data, &config)
+	err = json.Unmarshal(data, &Conf)
 	if err != nil {
 		return err
 	}

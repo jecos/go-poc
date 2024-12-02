@@ -1,9 +1,9 @@
-package main
+package data
 
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
-	"go-poc/models"
+	"go-poc/internal/types"
 	"gorm.io/gorm"
 	"testing"
 )
@@ -21,8 +21,8 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := NewMySQLRepository(db)
-		query := Query{
-			SelectedFields: models.OccurrencesFields,
+		query := types.Query{
+			SelectedFields: types.OccurrencesFields,
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
@@ -43,9 +43,9 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := NewMySQLRepository(db)
-		query := Query{
+		query := types.Query{
 
-			SelectedFields: []Field{models.SeqIdField, models.LocusIdField, models.AdRatioField, models.FilterField},
+			SelectedFields: []types.Field{types.SeqIdField, types.LocusIdField, types.AdRatioField, types.FilterField},
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
@@ -62,7 +62,7 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := NewMySQLRepository(db)
-		query := Query{}
+		query := types.Query{}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
 		assert.Len(t, occurrences, 1)
@@ -88,13 +88,13 @@ func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 
-		query := Query{
-			Filters: &ComparisonNode{
+		query := types.Query{
+			Filters: &types.ComparisonNode{
 				Operator: "in",
 				Value:    "PASS",
-				Field:    models.FilterField,
+				Field:    types.FilterField,
 			},
-			SelectedFields: models.OccurrencesFields,
+			SelectedFields: types.OccurrencesFields,
 		}
 		c, err := repo.CountOccurrences(1, &query)
 
@@ -109,13 +109,13 @@ func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 
 		repo := NewMySQLRepository(db)
 
-		query := Query{
-			Filters: &ComparisonNode{
+		query := types.Query{
+			Filters: &types.ComparisonNode{
 				Operator: "in",
 				Value:    "PASS",
-				Field:    models.FilterField,
+				Field:    types.FilterField,
 			},
-			SelectedFields: models.OccurrencesFields,
+			SelectedFields: types.OccurrencesFields,
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)

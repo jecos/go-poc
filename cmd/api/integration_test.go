@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	data2 "go-poc/internal/data"
+	"go-poc/internal/server"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
@@ -13,9 +15,9 @@ import (
 
 func testList(t *testing.T, data string, body string, expected string) {
 	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := data2.NewMySQLRepository(db)
 		router := gin.Default()
-		router.POST("/occurrences/:seq_id/list", occurrencesListHandler(repo))
+		router.POST("/occurrences/:seq_id/list", server.OccurrencesListHandler(repo))
 
 		req, _ := http.NewRequest("POST", "/occurrences/1/list", bytes.NewBufferString(body))
 		w := httptest.NewRecorder()
@@ -27,9 +29,9 @@ func testList(t *testing.T, data string, body string, expected string) {
 }
 func testCount(t *testing.T, data string, body string, expected int) {
 	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := data2.NewMySQLRepository(db)
 		router := gin.Default()
-		router.POST("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
+		router.POST("/occurrences/:seq_id/count", server.OccurrencesCountHandler(repo))
 
 		req, _ := http.NewRequest("POST", "/occurrences/1/count", bytes.NewBufferString(body))
 		w := httptest.NewRecorder()
@@ -41,9 +43,9 @@ func testCount(t *testing.T, data string, body string, expected int) {
 }
 func testAggregation(t *testing.T, data string, body string, expected string) {
 	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := data2.NewMySQLRepository(db)
 		router := gin.Default()
-		router.POST("/occurrences/:seq_id/aggregate", occurrencesAggregateHandler(repo))
+		router.POST("/occurrences/:seq_id/aggregate", server.OccurrencesAggregateHandler(repo))
 
 		req, _ := http.NewRequest("POST", "/occurrences/1/aggregate", bytes.NewBufferString(body))
 		w := httptest.NewRecorder()

@@ -1,18 +1,20 @@
-package main
+package data
 
 import (
 	"fmt"
 	"github.com/Goldziher/go-utils/sliceutils"
-	"go-poc/models"
+	"go-poc/internal/types"
 	"gorm.io/gorm"
 	"log"
 )
 
+type Occurrence = types.Occurrence
+type Aggregation = types.Aggregation
 type Repository interface {
 	CheckDatabaseConnection() string
-	GetOccurrences(seqId int, userFilter *Query) ([]Occurrence, error)
-	CountOccurrences(seqId int, userQuery *Query) (int64, error)
-	AggregateOccurrences(seqId int, userQuery *Query) ([]Aggregation, error)
+	GetOccurrences(seqId int, userFilter *types.Query) ([]Occurrence, error)
+	CountOccurrences(seqId int, userQuery *types.Query) (int64, error)
+	AggregateOccurrences(seqId int, userQuery *types.Query) ([]Aggregation, error)
 }
 
 type MySQLRepository struct {
@@ -37,20 +39,20 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurrence, error) {
+func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
 
 	tx, part, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err
 	}
-	var columns = sliceutils.Map(userQuery.SelectedFields, func(field Field, index int, slice []Field) string {
+	var columns = sliceutils.Map(userQuery.SelectedFields, func(field types.Field, index int, slice []types.Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.GetAlias())
 	})
 	if columns == nil {
 		columns = []string{"o.locus_id"}
 	}
 	var occurrences []Occurrence
-	if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
+	if hasFieldFromTable(userQuery.FilteredFields, types.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, types.VariantTable) {
 		tx = tx.Select("o.locus_id").Limit(10)
 		err = r.db.Table("occurrences o, variants v").
 			Select(columns).
@@ -67,14 +69,14 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *Query) ([]Occurre
 
 }
 
-func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) (*gorm.DB, int, error) {
+func buildQuery(seqId int, userQuery *types.Query, r *MySQLRepository) (*gorm.DB, int, error) {
 	part, err := r.GetPart(seqId)
 	if err != nil {
 		return nil, 0, err
 	}
 	tx := r.db.Table("occurrences o").Where("o.seq_id = ? and part=? and has_alt", seqId, part)
 	if userQuery != nil {
-		if hasFieldFromTable(userQuery.FilteredFields, models.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, models.VariantTable) {
+		if hasFieldFromTable(userQuery.FilteredFields, types.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, types.VariantTable) {
 			tx = tx.Joins("JOIN variants v ON v.locus_id=o.locus_id")
 		}
 
@@ -87,13 +89,13 @@ func buildQuery(seqId int, userQuery *Query, r *MySQLRepository) (*gorm.DB, int,
 	return tx, part, nil
 }
 
-func hasFieldFromTable(fields []Field, table Table) bool {
-	return sliceutils.Some(fields, func(field Field, index int, slice []Field) bool {
+func hasFieldFromTable(fields []types.Field, table types.Table) bool {
+	return sliceutils.Some(fields, func(field types.Field, index int, slice []types.Field) bool {
 		return field.Table == table
 	})
 }
 
-func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *Query) (int64, error) {
+func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *types.Query) (int64, error) {
 	tx, _, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
 		return 0, err
@@ -117,7 +119,7 @@ func (r *MySQLRepository) GetPart(seqId int) (int, error) { //TODO cache
 	return part, err
 }
 
-func (r *MySQLRepository) AggregateOccurrences(seqId int, userQuery *Query) ([]Aggregation, error) {
+func (r *MySQLRepository) AggregateOccurrences(seqId int, userQuery *types.Query) ([]Aggregation, error) {
 	tx, _, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err

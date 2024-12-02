@@ -1,7 +1,8 @@
-package main
+package database
 
 import (
 	"fmt"
+	"go-poc/internal/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"time"
@@ -9,9 +10,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func initDB() (*gorm.DB, error) {
+func InitDB() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?interpolateParams=true",
-		config.DBUsername, config.DBPassword, config.DBHost, config.DBPort, config.DBName)
+		config.Conf.DBUsername, config.Conf.DBPassword, config.Conf.DBHost, config.Conf.DBPort, config.Conf.DBName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package models
+package types
 
 type Occurrence struct {
 	SeqId                 int     `json:"seq_id,omitempty"`

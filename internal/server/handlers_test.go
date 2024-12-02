@@ -1,7 +1,8 @@
-package main
+package server
 
 import (
 	"bytes"
+	"go-poc/internal/types"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,8 +17,8 @@ func (m *MockRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (m *MockRepository) GetOccurrences(int, *Query) ([]Occurrence, error) {
-	return []Occurrence{
+func (m *MockRepository) GetOccurrences(int, *types.Query) ([]types.Occurrence, error) {
+	return []types.Occurrence{
 		{
 			SeqId:        1,
 			LocusId:      1000,
@@ -32,12 +33,12 @@ func (m *MockRepository) GetOccurrences(int, *Query) ([]Occurrence, error) {
 	}, nil
 }
 
-func (m *MockRepository) CountOccurrences(int, *Query) (int64, error) {
+func (m *MockRepository) CountOccurrences(int, *types.Query) (int64, error) {
 	return 15, nil
 }
 
-func (m *MockRepository) AggregateOccurrences(int, *Query) ([]Aggregation, error) {
-	return []Aggregation{
+func (m *MockRepository) AggregateOccurrences(int, *types.Query) ([]types.Aggregation, error) {
+	return []types.Aggregation{
 			{Bucket: "HET", Count: 2},
 			{Bucket: "HOM", Count: 1},
 		},
@@ -47,7 +48,7 @@ func (m *MockRepository) AggregateOccurrences(int, *Query) ([]Aggregation, error
 func TestStatusHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
-	router.GET("/status", statusHandler(repo))
+	router.GET("/status", StatusHandler(repo))
 
 	req, _ := http.NewRequest("GET", "/status", nil)
 	w := httptest.NewRecorder()
@@ -60,7 +61,7 @@ func TestStatusHandler(t *testing.T) {
 func TestOccurrencesListHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
-	router.POST("/occurrences/:seq_id/list", occurrencesListHandler(repo))
+	router.POST("/occurrences/:seq_id/list", OccurrencesListHandler(repo))
 	body := `{
 			"selected_fields":[
 				"seq_id","locus_id","filter","zygosity","pf","af","hgvsg","ad_ratio","variant_class"
@@ -87,7 +88,7 @@ func TestOccurrencesListHandler(t *testing.T) {
 func TestOccurrencesCountHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
-	router.POST("/occurrences/:seq_id/count", occurrencesCountHandler(repo))
+	router.POST("/occurrences/:seq_id/count", OccurrencesCountHandler(repo))
 
 	req, _ := http.NewRequest("POST", "/occurrences/1/count", bytes.NewBuffer([]byte("{}")))
 	w := httptest.NewRecorder()
@@ -100,7 +101,7 @@ func TestOccurrencesCountHandler(t *testing.T) {
 func TestOccurrencesAggregateHandler(t *testing.T) {
 	repo := &MockRepository{}
 	router := gin.Default()
-	router.POST("/occurrences/:seq_id/aggregate", occurrencesAggregateHandler(repo))
+	router.POST("/occurrences/:seq_id/aggregate", OccurrencesAggregateHandler(repo))
 
 	body := `{
 			"field": "zygosity",

@@ -1,4 +1,4 @@
-package main
+package types
 
 type SQON struct {
 	Field   string      `json:"field,omitempty"`   // Field to filter on (for leaf nodes)

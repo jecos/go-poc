@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+const testResources = "../../test_resources"
+
 var (
 	starrocksContainer testcontainers.Container
 	containerStarted   bool
@@ -72,7 +74,7 @@ func initDb(folderName string) (*gorm.DB, string, error) {
 	}
 
 	// Read the list of .tsv files in the folder
-	files, err := os.ReadDir(filepath.Join("test_resources", folderName))
+	files, err := os.ReadDir(filepath.Join(testResources, folderName))
 	if err != nil {
 		log.Fatal("failed to read directory test_resoures", err)
 	}
@@ -95,7 +97,7 @@ func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry)
 	}
 
 	tableName := strings.TrimSuffix(file.Name(), ".tsv")
-	sqlFilePath := filepath.Join("test_resources", "sql", tableName+".sql")
+	sqlFilePath := filepath.Join(testResources, "sql", tableName+".sql")
 
 	// Read the SQL file
 	sqlFile, err := os.ReadFile(sqlFilePath)
@@ -110,7 +112,7 @@ func createTableAndPopulateData(db *sql.DB, folderName string, file os.DirEntry)
 	}
 
 	// Populate the table with data from the .tsv file
-	tsvFilePath := filepath.Join("test_resources", folderName, file.Name())
+	tsvFilePath := filepath.Join(testResources, folderName, file.Name())
 	tsvFile, err := os.Open(tsvFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to open TSV file: %v", err)

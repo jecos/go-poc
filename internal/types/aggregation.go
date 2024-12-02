@@ -1,4 +1,4 @@
-package models
+package types
 
 type Aggregation struct {
 	Bucket string `json:"key"`

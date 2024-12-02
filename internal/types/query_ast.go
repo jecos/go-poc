@@ -1,9 +1,8 @@
-package main
+package types
 
 import (
 	"fmt"
 	"github.com/Goldziher/go-utils/sliceutils"
-	"go-poc/models"
 	"strings"
 )
 
@@ -125,7 +124,7 @@ type Query struct {
 func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
 
 	// Define allowed selectedCols
-	selectedFields := models.FindSelectedFields(fields, selected)
+	selectedFields := FindSelectedFields(fields, selected)
 
 	if sqon != nil {
 		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
@@ -138,7 +137,7 @@ func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
 func BuildAggregationQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
 
 	// Define allowed selectedCols
-	selectedFields := models.FindSelectedFields(fields, selected)
+	selectedFields := FindSelectedFields(fields, selected)
 
 	if sqon != nil {
 		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
@@ -188,7 +187,7 @@ func parseSQONToAST(sqon *SQON, fields *[]Field) (FilterNode, []Field, error) {
 		if sqon.Value == nil {
 			return nil, nil, fmt.Errorf("value must be defined: %s", sqon.Field)
 		}
-		meta := models.FindByName(fields, sqon.Field)
+		meta := FindByName(fields, sqon.Field)
 
 		if meta == nil || !meta.CanBeFiltered {
 			return nil, nil, fmt.Errorf("unauthorized or unknown field: %s", sqon.Field)

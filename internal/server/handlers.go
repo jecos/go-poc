@@ -1,13 +1,14 @@
-package main
+package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-poc/models"
+	"go-poc/internal/data"
+	"go-poc/internal/types"
 	"net/http"
 	"strconv"
 )
 
-func statusHandler(repo Repository) gin.HandlerFunc {
+func StatusHandler(repo data.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		status := repo.CheckDatabaseConnection()
 		c.JSON(http.StatusOK, gin.H{
@@ -16,11 +17,11 @@ func statusHandler(repo Repository) gin.HandlerFunc {
 	}
 }
 
-func occurrencesListHandler(repo Repository) gin.HandlerFunc {
+func OccurrencesListHandler(repo data.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			body  ListBody
-			query Query
+			body  types.ListBody
+			query types.Query
 		)
 
 		// Bind JSON to the struct
@@ -29,7 +30,7 @@ func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		query, err := BuildQuery(body.SelectedFields, body.SQON, &models.OccurrencesFields)
+		query, err := types.BuildQuery(body.SelectedFields, body.SQON, &types.OccurrencesFields)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -49,11 +50,11 @@ func occurrencesListHandler(repo Repository) gin.HandlerFunc {
 	}
 }
 
-func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
+func OccurrencesCountHandler(repo data.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			body  CountBody
-			query Query
+			body  types.CountBody
+			query types.Query
 		)
 
 		// Bind JSON to the struct
@@ -62,7 +63,7 @@ func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		query, err := BuildQuery(nil, body.SQON, &models.OccurrencesFields)
+		query, err := types.BuildQuery(nil, body.SQON, &types.OccurrencesFields)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -81,11 +82,11 @@ func occurrencesCountHandler(repo Repository) gin.HandlerFunc {
 	}
 }
 
-func occurrencesAggregateHandler(repo Repository) gin.HandlerFunc {
+func OccurrencesAggregateHandler(repo data.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
-			body  AggregationBody
-			query Query
+			body  types.AggregationBody
+			query types.Query
 		)
 
 		// Bind JSON to the struct
@@ -95,7 +96,7 @@ func occurrencesAggregateHandler(repo Repository) gin.HandlerFunc {
 			return
 		}
 		selected := []string{body.Field}
-		query, err := BuildQuery(selected, body.SQON, &models.OccurrencesFields)
+		query, err := types.BuildQuery(selected, body.SQON, &types.OccurrencesFields)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

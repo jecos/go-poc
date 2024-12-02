@@ -1,4 +1,4 @@
-package models
+package types
 
 var VariantTable = Table{
 	Name:  "variants",
