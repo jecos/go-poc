@@ -3,7 +3,7 @@ version: '3.8'
 services:
   starrocks:
     image: starrocks/allin1-ubuntu
-    container_name: starrocks
+    container_name: starrocks_radiant
     ports:
       - "9030:9030"
       - "8030:8030"

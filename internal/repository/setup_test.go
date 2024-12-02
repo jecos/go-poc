@@ -21,7 +21,10 @@ import (
 	"time"
 )
 
-const testResources = "../../test"
+const (
+	testResources          = "../../test"
+	starrocksContainerName = "starrocks_radiant"
+)
 
 var (
 	starrocksContainer testcontainers.Container
@@ -183,7 +186,8 @@ func startStarRocksContainer() (testcontainers.Container, error) {
 func setupContainer() {
 	once.Do(func() {
 		// Run the script to start the container if it's not already running
-		cmd := exec.Command("docker", "ps", "-q", "-f", "name=starrocks_test")
+
+		cmd := exec.Command("docker", "ps", "-q", "-f", fmt.Sprintf("name=%s", starrocksContainerName))
 		output, err := cmd.Output()
 		if err != nil {
 			fmt.Printf("Failed to check if StarRocks container is running: %v\n", err)
@@ -204,7 +208,7 @@ func setupContainer() {
 			ctx := context.Background()
 			starrocksContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 				ContainerRequest: testcontainers.ContainerRequest{
-					Name: "starrocks_test",
+					Name: starrocksContainerName,
 				},
 				Started: true,
 				Reuse:   true,
