@@ -1,8 +1,6 @@
 # go-poc
 
-# Project test-blueprint
-
-One Paragraph of project description goes here
+Prototype for an API on Starrocks
 
 ## Getting Started
 
