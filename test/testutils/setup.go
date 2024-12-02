@@ -1,4 +1,4 @@
-package main
+package testutils
 
 import (
 	"bufio"
@@ -22,15 +22,27 @@ import (
 )
 
 const (
-	testResources          = "../../test"
+	testResources          = "../../test/data"
 	starrocksContainerName = "starrocks_radiant"
 )
 
 var (
 	starrocksContainer testcontainers.Container
-	containerStarted   bool
 	once               sync.Once
+	containerStarted   bool
 )
+
+func StopContainer() {
+	if containerStarted {
+		fmt.Println("Stopping StarRocks container..")
+		if err := starrocksContainer.Terminate(context.Background()); err != nil {
+			log.Fatal("Failed to stop StarRocks container: ", err)
+		}
+		fmt.Println("StarRocks container stopped")
+	} else {
+		fmt.Println("StarRocks container is still running because it was started outside the tests")
+	}
+}
 
 func ParallelTestWithDb(t *testing.T, dbName string, testFunc func(t *testing.T, db *gorm.DB)) {
 	t.Parallel()
@@ -183,24 +195,22 @@ func startStarRocksContainer() (testcontainers.Container, error) {
 	return container, nil
 }
 
-func setupContainer() {
+func SetupContainer() {
 	once.Do(func() {
 		// Run the script to start the container if it's not already running
 		cmd := exec.Command("docker", "ps", "-q", "-f", fmt.Sprintf("name=%s", starrocksContainerName))
 		output, err := cmd.Output()
 		if err != nil {
-			fmt.Printf("Failed to check if StarRocks container is running: %v\n", err)
-			os.Exit(1)
+			log.Fatal("Failed to check if StarRocks container is running: ", err)
 		}
 
 		if len(output) == 0 {
 			// Container is not running, start a new one
-			containerStarted = true
 			starrocksContainer, err = startStarRocksContainer()
 			if err != nil {
-				fmt.Printf("Failed to start StarRocks container: %v\n", err)
-				os.Exit(1)
+				log.Fatal("Failed to start StarRocks container: ", err)
 			}
+			containerStarted = true
 		} else {
 			// Container is already running, attach to it
 			fmt.Println("StarRocks container is already running.")
@@ -213,25 +223,9 @@ func setupContainer() {
 				Reuse:   true,
 			})
 			if err != nil {
-				fmt.Printf("Failed to attach to StarRocks container: %v\n", err)
-				os.Exit(1)
+				log.Fatal("Failed to attach to StarRocks container: ", err)
 			}
+			containerStarted = false
 		}
 	})
-}
-
-func TestMain(m *testing.M) {
-
-	setupContainer()
-
-	code := m.Run()
-
-	// Clean up
-
-	if containerStarted {
-		ctx := context.Background()
-		starrocksContainer.Terminate(ctx)
-	}
-
-	os.Exit(code)
 }

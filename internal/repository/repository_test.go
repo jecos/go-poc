@@ -4,12 +4,14 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"go-poc/internal/types"
+	"go-poc/test/testutils"
 	"gorm.io/gorm"
+	"os"
 	"testing"
 )
 
 func TestCheckDatabaseConnection(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		status := repo.CheckDatabaseConnection()
 		assert.Equal(t, "up", status)
@@ -18,7 +20,7 @@ func TestCheckDatabaseConnection(t *testing.T) {
 }
 
 func TestGetOccurrences(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
 		query := types.Query{
@@ -41,7 +43,7 @@ func TestGetOccurrences(t *testing.T) {
 }
 
 func TestGetOccurrencesWithPartialColumns(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		query := types.Query{
 
@@ -59,7 +61,7 @@ func TestGetOccurrencesWithPartialColumns(t *testing.T) {
 }
 
 func TestGetOccurrencesWithNoColumns(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
 		query := types.Query{}
@@ -75,7 +77,7 @@ func TestGetOccurrencesWithNoColumns(t *testing.T) {
 }
 
 func TestCountOccurrences(t *testing.T) {
-	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 		repo := New(db)
 		count, err := repo.CountOccurrences(1, nil)
 		assert.NoError(t, err)
@@ -84,7 +86,7 @@ func TestCountOccurrences(t *testing.T) {
 }
 
 func TestCountOccurrencesFilter(t *testing.T) {
-	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
 
@@ -105,7 +107,7 @@ func TestCountOccurrencesFilter(t *testing.T) {
 }
 
 func TestGetOccurrencesFilter(t *testing.T) {
-	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
 		repo := New(db)
 
@@ -131,4 +133,11 @@ func TestGetOccurrencesFilter(t *testing.T) {
 			assert.Equal(t, "class1", occurrences[0].VariantClass)
 		}
 	})
+}
+
+func TestMain(m *testing.M) {
+	testutils.SetupContainer()
+	code := m.Run()
+	testutils.StopContainer()
+	os.Exit(code)
 }

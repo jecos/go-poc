@@ -7,14 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-poc/internal/repository"
 	"go-poc/internal/server"
+	"go-poc/test/testutils"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
 func testList(t *testing.T, data string, body string, expected string) {
-	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
 		repo := repository.New(db)
 		router := gin.Default()
 		router.POST("/occurrences/:seq_id/list", server.OccurrencesListHandler(repo))
@@ -28,7 +30,7 @@ func testList(t *testing.T, data string, body string, expected string) {
 	})
 }
 func testCount(t *testing.T, data string, body string, expected int) {
-	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
 		repo := repository.New(db)
 		router := gin.Default()
 		router.POST("/occurrences/:seq_id/count", server.OccurrencesCountHandler(repo))
@@ -42,7 +44,7 @@ func testCount(t *testing.T, data string, body string, expected int) {
 	})
 }
 func testAggregation(t *testing.T, data string, body string, expected string) {
-	ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
+	testutils.ParallelTestWithDb(t, data, func(t *testing.T, db *gorm.DB) {
 		repo := repository.New(db)
 		router := gin.Default()
 		router.POST("/occurrences/:seq_id/aggregate", server.OccurrencesAggregateHandler(repo))
@@ -117,4 +119,11 @@ func TestIntegrationAggregation(t *testing.T) {
 		}`
 	expected := `[{"key": "HET", "count": 2}, {"key": "HOM", "count": 1}]`
 	testAggregation(t, "aggregation", body, expected)
+}
+
+func TestMain(m *testing.M) {
+	testutils.SetupContainer()
+	code := m.Run()
+	testutils.StopContainer()
+	os.Exit(code)
 }
