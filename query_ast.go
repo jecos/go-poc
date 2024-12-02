@@ -135,6 +135,19 @@ func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
 	}
 }
 
+func BuildAggregationQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
+
+	// Define allowed selectedCols
+	selectedFields := models.FindSelectedFields(fields, selected)
+
+	if sqon != nil {
+		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
+		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields}, err
+	} else {
+		return Query{SelectedFields: selectedFields}, nil
+	}
+}
+
 func parseSQONToAST(sqon *SQON, fields *[]Field) (FilterNode, []Field, error) {
 	if sqon.Field != "" && sqon.Content != nil {
 		return nil, nil, fmt.Errorf("a sqon cannot have both content and field defined: %s", sqon.Field)

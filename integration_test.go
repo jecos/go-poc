@@ -95,11 +95,22 @@ func TestIntegrationCountSqon(t *testing.T) {
 func TestIntegrationAggregation(t *testing.T) {
 	body := `{
 			"field": "zygosity",
-			"sqon":{
-				"op":"in",
-				"field": "filter",
-				"value": "PASS"
-		    },
+			"sqon": {
+				"op": "and",
+				"content": [
+					{
+						"op":"in",
+						"field": "filter",
+						"value": "PASS"
+					},
+					{
+						"op": "in",
+						"field": "zygosity",
+						"value": "HOM"
+					}            
+		
+				]
+			},
 			"size": 10
 		}`
 	expected := `[{"key": "HET", "count": 2}, {"key": "HOM", "count": 1}]`
