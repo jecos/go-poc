@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const testResources = "../../test_resources"
+const testResources = "../../test"
 
 var (
 	starrocksContainer testcontainers.Container
