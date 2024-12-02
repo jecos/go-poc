@@ -168,6 +168,7 @@ func startStarRocksContainer() (testcontainers.Container, error) {
 			wait.ForListeningPort("9030/tcp"),
 			wait.ForListeningPort("8030/tcp"),
 			wait.ForListeningPort("8040/tcp"),
+			wait.ForLog("Enjoy the journey to StarRocks").WithPollInterval(1*time.Second),
 		),
 	}
 
@@ -178,7 +179,6 @@ func startStarRocksContainer() (testcontainers.Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer time.Sleep(30 * time.Second)
 
 	return container, nil
 }

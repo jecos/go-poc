@@ -7,16 +7,20 @@ services:
     ports:
       - "9030:9030"
       - "8030:8030"
-      - "8040:8040"      
-
+      - "8040:8040"
+    healthcheck:
+      test: >
+        curl -sf http://localhost:8030/api/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
   init:
     image: starrocks/allin1-ubuntu
     depends_on:
-      - starrocks
+       starrocks:
+         condition: service_healthy
     volumes:
-      - ./init-sql:/docker-entrypoint-initdb.d
+      - ./scripts/init-sql:/docker-entrypoint-initdb.d
     entrypoint: >
       /bin/bash -c "
-      sleep 30;
-      mysql -hstarrocks -P9030 -uroot < /docker-entrypoint-initdb.d/init.sql;
-      exit 0"
+      mysql -hstarrocks -P9030 -uroot < /docker-entrypoint-initdb.d/init.sql;"
