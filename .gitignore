@@ -43,3 +43,4 @@ go-poc
 
 #config
 config.json
+.env

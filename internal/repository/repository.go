@@ -21,7 +21,7 @@ type MySQLRepository struct {
 	db *gorm.DB
 }
 
-func NewMySQLRepository(db *gorm.DB) *MySQLRepository {
+func New(db *gorm.DB) *MySQLRepository {
 	return &MySQLRepository{db: db}
 }
 

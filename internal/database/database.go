@@ -2,17 +2,26 @@ package database
 
 import (
 	"fmt"
-	"go-poc/internal/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-func InitDB() (*gorm.DB, error) {
+var (
+	dbHost     = os.Getenv("DB_HOST")
+	dbPort     = os.Getenv("DB_PORT")
+	dbName     = os.Getenv("DB_NAME")
+	dbUserName = os.Getenv("DB_USERNAME")
+	dbPassword = os.Getenv("DB_PASSWORD")
+)
+
+func New() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?interpolateParams=true",
-		config.Conf.DBUsername, config.Conf.DBPassword, config.Conf.DBHost, config.Conf.DBPort, config.Conf.DBName)
+		dbUserName, dbPassword, dbHost, dbPort, dbName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err

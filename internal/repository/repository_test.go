@@ -10,7 +10,7 @@ import (
 
 func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 		status := repo.CheckDatabaseConnection()
 		assert.Equal(t, "up", status)
 
@@ -20,7 +20,7 @@ func TestMySQLRepository_CheckDatabaseConnection(t *testing.T) {
 func TestMySQLRepository_GetOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 		query := types.Query{
 			SelectedFields: types.OccurrencesFields,
 		}
@@ -42,7 +42,7 @@ func TestMySQLRepository_GetOccurrences(t *testing.T) {
 
 func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 		query := types.Query{
 
 			SelectedFields: []types.Field{types.SeqIdField, types.LocusIdField, types.AdRatioField, types.FilterField},
@@ -61,7 +61,7 @@ func TestMySQLRepository_GetOccurrencesWithPartialColumns(t *testing.T) {
 func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
 
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 		query := types.Query{}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
@@ -76,7 +76,7 @@ func TestMySQLRepository_GetOccurrencesWithNoColumns(t *testing.T) {
 
 func TestMySQLRepository_CountOccurrences(t *testing.T) {
 	ParallelTestWithDb(t, "simple", func(t *testing.T, db *gorm.DB) {
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 		count, err := repo.CountOccurrences(1, nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, count)
@@ -86,7 +86,7 @@ func TestMySQLRepository_CountOccurrences(t *testing.T) {
 func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
 	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 
 		query := types.Query{
 			Filters: &types.ComparisonNode{
@@ -107,7 +107,7 @@ func TestMySQLRepository_CountOccurrencesFilter(t *testing.T) {
 func TestMySQLRepository_GetOccurrencesFilter(t *testing.T) {
 	ParallelTestWithDb(t, "multiple", func(t *testing.T, db *gorm.DB) {
 
-		repo := NewMySQLRepository(db)
+		repo := New(db)
 
 		query := types.Query{
 			Filters: &types.ComparisonNode{
