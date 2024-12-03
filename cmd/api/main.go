@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"go-poc/internal/database"
 	"go-poc/internal/repository"
@@ -20,6 +21,7 @@ func main() {
 	repo := repository.New(db)
 
 	r := gin.Default()
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.GET("/status", server.StatusHandler(repo))
 	r.POST("/occurrences/:seq_id/count", server.OccurrencesCountHandler(repo))
