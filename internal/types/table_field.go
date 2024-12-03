@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/Goldziher/go-utils/sliceutils"
-	"slices"
 )
 
 type Table struct {
@@ -34,10 +33,14 @@ func FindByName(fields *[]Field, name string) *Field {
 
 }
 func FindSelectedFields(fields *[]Field, selected []string) []Field {
-	return sliceutils.Filter(*fields, func(field Field, index int, slice []Field) bool {
-		return field.CanBeSelected && slices.Contains(selected, field.Name)
-	})
-
+	var selectedFields []Field
+	for _, s := range selected {
+		field := FindByName(fields, s)
+		if field != nil && field.CanBeSelected {
+			selectedFields = append(selectedFields, *field)
+		}
+	}
+	return selectedFields
 }
 
 func FindSortedFields(fields *[]Field, sorted []SortBody) []SortField {
