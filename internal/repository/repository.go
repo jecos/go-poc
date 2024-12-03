@@ -57,29 +57,48 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field types.Field, index int, slice []types.Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.GetAlias())
 	})
+	var sortedColumns = sliceutils.Map(userQuery.SortedFields, func(sort types.SortField, index int, slice []types.SortField) string {
+		return fmt.Sprintf("%s.%s as %s", sort.Field.Table.Alias, sort.Field.Name, sort.Field.GetAlias())
+	})
+	columns = append(columns, sortedColumns...) //We add sortedColumns to selected one to be able to add order by clause
 	if columns == nil {
 		columns = []string{"o.locus_id"}
 	}
 	var occurrences []Occurrence
+	addLimitAndSort(tx, userQuery)
 	if hasFieldFromTable(userQuery.FilteredFields, types.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, types.VariantTable) {
-		if userQuery.Pagination != nil {
-			tx = tx.Select("o.locus_id").Limit(limit(userQuery.Pagination.Limit)).Offset(userQuery.Pagination.Offset)
-		} else {
-			tx = tx.Select("o.locus_id").Limit(MinLimit)
-		}
-		err = r.db.Table("occurrences o, variants v").
+		tx = tx.Select("o.locus_id")
+		tx = r.db.Table("occurrences o, variants v").
 			Select(columns).
-			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx).
-			Find(&occurrences).Error
+			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx)
+		addSort(tx, userQuery) //We re-apply the sort on the outer query
+		err = tx.Find(&occurrences).Error
 	} else {
 		err = tx.Select(columns).Limit(10).Find(&occurrences).Error
 	}
 	if err != nil {
-		log.Println("error fetching occurrences:", err)
+		err = fmt.Errorf("error fetching occurrences: %w", err)
+		return nil, err
 	}
 
 	return occurrences, err
 
+}
+
+func addLimitAndSort(tx *gorm.DB, userQuery *types.Query) {
+	if userQuery.Pagination != nil {
+		tx = tx.Limit(limit(userQuery.Pagination.Limit)).Offset(userQuery.Pagination.Offset)
+	} else {
+		tx = tx.Limit(MinLimit)
+	}
+	addSort(tx, userQuery)
+}
+
+func addSort(tx *gorm.DB, userQuery *types.Query) {
+	for _, sort := range userQuery.SortedFields {
+		s := fmt.Sprintf("%s %s", sort.Field.GetAlias(), sort.Order)
+		tx = tx.Order(s)
+	}
 }
 
 func prepareQuery(seqId int, userQuery *types.Query, r *MySQLRepository) (*gorm.DB, int, error) {

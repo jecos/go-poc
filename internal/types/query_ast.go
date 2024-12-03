@@ -120,6 +120,12 @@ type Query struct {
 	FilteredFields []Field    //Fields used in the filters
 	SelectedFields []Field    //Fields used for selection
 	Pagination     *Pagination
+	SortedFields   []SortField
+}
+
+type SortField struct {
+	Field Field
+	Order string
 }
 
 type Pagination struct {

@@ -8,10 +8,16 @@ type SQON struct {
 }
 
 type ListBody struct {
-	SelectedFields []string `json:"selected_fields"`
-	SQON           *SQON    `json:"sqon"`
-	Limit          int      `json:"limit"`
-	Offset         int      `json:"offset"`
+	SelectedFields []string   `json:"selected_fields"`
+	SQON           *SQON      `json:"sqon"`
+	Limit          int        `json:"limit"`
+	Offset         int        `json:"offset"`
+	Sort           []SortBody `json:"sort"`
+}
+
+type SortBody struct {
+	Field string `json:"field"`
+	Order string `json:"order"`
 }
 
 type CountBody struct {

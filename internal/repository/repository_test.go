@@ -163,10 +163,19 @@ func TestGetOccurrencesLimitAndOffset(t *testing.T) {
 				Limit:  12,
 				Offset: 5,
 			},
+			SortedFields: []types.SortField{
+				{
+					Field: types.PfField,
+					Order: "desc",
+				},
+			},
 		}
 		occurrences, err := repo.GetOccurrences(1, &query)
 		assert.NoError(t, err)
-		assert.Len(t, occurrences, 12)
+		if assert.Len(t, occurrences, 12) {
+			assert.EqualValues(t, 1023, occurrences[0].LocusId)
+			assert.EqualValues(t, 1012, occurrences[len(occurrences)-1].LocusId)
+		}
 	})
 }
 
