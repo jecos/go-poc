@@ -19,6 +19,7 @@ type Field struct {
 	Table         Table  // Table to which the field belongs
 }
 
+// GetAlias returns the alias of the field if it is set, otherwise returns the name
 func (f *Field) GetAlias() string {
 	if f.Alias != "" {
 		return f.Alias
@@ -26,12 +27,16 @@ func (f *Field) GetAlias() string {
 		return f.Name
 	}
 }
+
+// FindByName returns the field with the given name from the list of fields
 func FindByName(fields *[]Field, name string) *Field {
 	return sliceutils.Find(*fields, func(field Field, index int, slice []Field) bool {
 		return field.Name == name
 	})
 
 }
+
+// FindSelectedFields returns the fields that can be selected from the list of string field names
 func FindSelectedFields(fields *[]Field, selected []string) []Field {
 	var selectedFields []Field
 	for _, s := range selected {
@@ -43,6 +48,7 @@ func FindSelectedFields(fields *[]Field, selected []string) []Field {
 	return selectedFields
 }
 
+// FindSortedFields returns the fields that can be sorted from the list of SortBody
 func FindSortedFields(fields *[]Field, sorted []SortBody) []SortField {
 	var sortedFields []SortField
 	for _, sort := range sorted {
