@@ -39,16 +39,11 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-const MinLimit = 10
-const MaxLimit = 200
+const (
+	MinLimit = 10
+	MaxLimit = 200
+)
 
-func limit(n int) int {
-	if n < MaxLimit {
-		return n
-	} else {
-		return MaxLimit
-	}
-}
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
 	var occurrences []Occurrence
 
@@ -95,7 +90,13 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 
 func addLimitAndSort(tx *gorm.DB, userQuery *types.Query) {
 	if userQuery.Pagination != nil {
-		tx = tx.Limit(limit(userQuery.Pagination.Limit)).Offset(userQuery.Pagination.Offset)
+		var l int
+		if userQuery.Pagination.Limit < MaxLimit {
+			l = userQuery.Pagination.Limit
+		} else {
+			l = MaxLimit
+		}
+		tx = tx.Limit(l).Offset(userQuery.Pagination.Offset)
 	} else {
 		tx = tx.Limit(MinLimit)
 	}
