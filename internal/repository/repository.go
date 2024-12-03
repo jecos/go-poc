@@ -50,9 +50,11 @@ func limit(n int) int {
 	}
 }
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
+	var occurrences []Occurrence
+
 	tx, part, err := prepareQuery(seqId, userQuery, r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error during query preparation %w", err)
 	}
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field types.Field, index int, slice []types.Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.GetAlias())
@@ -64,17 +66,23 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 	if columns == nil {
 		columns = []string{"o.locus_id"}
 	}
-	var occurrences []Occurrence
 	addLimitAndSort(tx, userQuery)
 	if hasFieldFromTable(userQuery.FilteredFields, types.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, types.VariantTable) {
+		// we build a TOP-N query like :
+		// SELECT o.locus_id, o.quality, o.ad_ratio, ...., v.variant_class, v.hgvsg... FROM occurrences o, variants v
+		// WHERE o.locus_id in (
+		//	SELECT o.locus_id FROM occurrences JOIN ... WHERE quality > 100 ORDER BY ad_ratio DESC LIMIT 10
+		// ) AND o.seq_id=? AND o.part=? AND v.locus_id=o.locus_id ORDER BY ad_ratio DESC
 		tx = tx.Select("o.locus_id")
 		tx = r.db.Table("occurrences o, variants v").
 			Select(columns).
 			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx)
+
 		addSort(tx, userQuery) //We re-apply the sort on the outer query
+
 		err = tx.Find(&occurrences).Error
 	} else {
-		err = tx.Select(columns).Limit(10).Find(&occurrences).Error
+		err = tx.Select(columns).Find(&occurrences).Error
 	}
 	if err != nil {
 		err = fmt.Errorf("error fetching occurrences: %w", err)
@@ -104,7 +112,7 @@ func addSort(tx *gorm.DB, userQuery *types.Query) {
 func prepareQuery(seqId int, userQuery *types.Query, r *MySQLRepository) (*gorm.DB, int, error) {
 	part, err := r.GetPart(seqId)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("error during partition fetch %w", err)
 	}
 	tx := r.db.Table("occurrences o").Where("o.seq_id = ? and part=? and has_alt", seqId, part)
 	if userQuery != nil {
@@ -130,7 +138,7 @@ func hasFieldFromTable(fields []types.Field, table types.Table) bool {
 func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *types.Query) (int64, error) {
 	tx, _, err := prepareQuery(seqId, userQuery, r)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error during query preparation %w", err)
 	}
 	var count int64
 	err = tx.Count(&count).Error
@@ -146,22 +154,22 @@ func (r *MySQLRepository) GetPart(seqId int) (int, error) { //TODO cache
 	var part int
 	err := tx.Scan(&part).Error
 	if err != nil {
-		log.Print("error fetching part:", err)
+		return part, fmt.Errorf("error fetching part: %w", err)
 	}
 	return part, err
 }
 
 func (r *MySQLRepository) AggregateOccurrences(seqId int, userQuery *types.Query) ([]Aggregation, error) {
 	tx, _, err := prepareQuery(seqId, userQuery, r)
-	if err != nil {
-		return nil, err
-	}
 	var aggregation []Aggregation
+	if err != nil {
+		return aggregation, fmt.Errorf("error during query preparation %w", err)
+	}
 	aggCol := userQuery.SelectedFields[0].Name
 	sel := fmt.Sprintf("%s as bucket, count(1) as count", aggCol)
 	err = tx.Select(sel).Group(aggCol).Find(&aggregation).Error
 	if err != nil {
-		log.Print("error aggregation:", err)
+		return aggregation, fmt.Errorf("error query aggragation: %w", err)
 	}
 	return aggregation, err
 }
