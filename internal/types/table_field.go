@@ -14,6 +14,7 @@ type Field struct {
 	Alias         string // Alias of the field to use in query
 	CanBeSelected bool   // Whether the field is authorized for selection
 	CanBeFiltered bool   // Whether the field is authorized for filtering
+	CanBeSorted   bool   // Whether the field is authorized for sorting
 	CustomOp      string // Custom operation, e.g., "array_contains"
 	DefaultOp     string // Default operation to use if no custom one exists
 	Table         Table  // Table to which the field belongs
@@ -36,5 +37,17 @@ func FindSelectedFields(fields *[]Field, selected []string) []Field {
 	return sliceutils.Filter(*fields, func(field Field, index int, slice []Field) bool {
 		return field.CanBeSelected && slices.Contains(selected, field.Name)
 	})
+
+}
+
+func FindSortedFields(fields *[]Field, sorted []SortBody) []SortField {
+	var sortedFields []SortField
+	for _, sort := range sorted {
+		field := FindByName(fields, sort.Field)
+		if field != nil && field.CanBeSorted && (sort.Order == "asc" || sort.Order == "desc") {
+			sortedFields = append(sortedFields, SortField{Field: *field, Order: sort.Order})
+		}
+	}
+	return sortedFields
 
 }

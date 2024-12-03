@@ -133,16 +133,19 @@ type Pagination struct {
 	Offset int //Offset the results
 }
 
-func BuildQuery(selected []string, sqon *SQON, fields *[]Field, pagination *Pagination) (Query, error) {
+func BuildQuery(selected []string, sqon *SQON, fields *[]Field, pagination *Pagination, sorted []SortBody) (Query, error) {
 
 	// Define allowed selectedCols
 	selectedFields := FindSelectedFields(fields, selected)
 
+	// Define allowed sortedCols
+	sortedField := FindSortedFields(fields, sorted)
+
 	if sqon != nil {
 		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
-		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields, Pagination: pagination}, err
+		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields, Pagination: pagination, SortedFields: sortedField}, err
 	} else {
-		return Query{SelectedFields: selectedFields, Pagination: pagination}, nil
+		return Query{SelectedFields: selectedFields, Pagination: pagination, SortedFields: sortedField}, nil
 	}
 }
 

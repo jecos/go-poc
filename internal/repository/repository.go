@@ -105,7 +105,7 @@ func addLimitAndSort(tx *gorm.DB, userQuery *types.Query) {
 
 func addSort(tx *gorm.DB, userQuery *types.Query) {
 	for _, sort := range userQuery.SortedFields {
-		s := fmt.Sprintf("%s %s", sort.Field.GetAlias(), sort.Order)
+		s := fmt.Sprintf("%s.%s %s", sort.Field.Table.Alias, sort.Field.GetAlias(), sort.Order)
 		tx = tx.Order(s)
 	}
 }

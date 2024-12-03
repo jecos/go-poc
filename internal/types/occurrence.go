@@ -2,6 +2,7 @@ package types
 
 type Occurrence struct {
 	SeqId                 int     `json:"seq_id,omitempty"`
+	Chromosome            string  `json:"chromosome,omitempty"`
 	LocusId               int64   `json:"locus_id,omitempty"`
 	Quality               int     `json:"quality,omitempty"`
 	Filter                string  `json:"filter,omitempty"`
@@ -55,6 +56,13 @@ var AdRatioField = Field{
 	CanBeFiltered: true,
 	Table:         OccurrenceTable,
 }
+var ChromosomeField = Field{
+	Name:          "chromosome",
+	CanBeSelected: true,
+	CanBeFiltered: true,
+	CanBeSorted:   true,
+	Table:         OccurrenceTable,
+}
 
 var OccurrencesFields = []Field{
 	SeqIdField,
@@ -66,4 +74,5 @@ var OccurrencesFields = []Field{
 	AfField,
 	VariantClassField,
 	HgvsgField,
+	ChromosomeField,
 }

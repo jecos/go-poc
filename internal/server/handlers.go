@@ -38,7 +38,7 @@ func OccurrencesListHandler(repo repository.Repository) gin.HandlerFunc {
 		} else {
 			p = types.Pagination{Limit: 10, Offset: 0}
 		}
-		query, err := types.BuildQuery(body.SelectedFields, body.SQON, &types.OccurrencesFields, &p)
+		query, err := types.BuildQuery(body.SelectedFields, body.SQON, &types.OccurrencesFields, &p, body.Sort)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -71,7 +71,7 @@ func OccurrencesCountHandler(repo repository.Repository) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		query, err := types.BuildQuery(nil, body.SQON, &types.OccurrencesFields, nil)
+		query, err := types.BuildQuery(nil, body.SQON, &types.OccurrencesFields, nil, nil)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -104,7 +104,7 @@ func OccurrencesAggregateHandler(repo repository.Repository) gin.HandlerFunc {
 			return
 		}
 		selected := []string{body.Field}
-		query, err := types.BuildQuery(selected, body.SQON, &types.OccurrencesFields, nil)
+		query, err := types.BuildQuery(selected, body.SQON, &types.OccurrencesFields, nil, nil)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
