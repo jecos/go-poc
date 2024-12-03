@@ -54,10 +54,7 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 	var columns = sliceutils.Map(userQuery.SelectedFields, func(field types.Field, index int, slice []types.Field) string {
 		return fmt.Sprintf("%s.%s as %s", field.Table.Alias, field.Name, field.GetAlias())
 	})
-	var sortedColumns = sliceutils.Map(userQuery.SortedFields, func(sort types.SortField, index int, slice []types.SortField) string {
-		return fmt.Sprintf("%s.%s as %s", sort.Field.Table.Alias, sort.Field.Name, sort.Field.GetAlias())
-	})
-	columns = append(columns, sortedColumns...) //We add sortedColumns to selected one to be able to add order by clause
+
 	if columns == nil {
 		columns = []string{"o.locus_id"}
 	}
