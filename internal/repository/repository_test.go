@@ -135,6 +135,44 @@ func TestGetOccurrencesFilter(t *testing.T) {
 	})
 }
 
+func TestGetOccurrencesLimit(t *testing.T) {
+	testutils.ParallelTestWithDb(t, "pagination", func(t *testing.T, db *gorm.DB) {
+
+		repo := New(db)
+
+		query := types.Query{
+			SelectedFields: types.OccurrencesFields,
+			Pagination: &types.Pagination{
+				Limit:  5,
+				Offset: 0,
+			},
+		}
+		occurrences, err := repo.GetOccurrences(1, &query)
+		assert.NoError(t, err)
+		assert.Len(t, occurrences, 5)
+	})
+}
+func TestGetOccurrencesLimitAndOffset(t *testing.T) {
+	testutils.ParallelTestWithDb(t, "pagination", func(t *testing.T, db *gorm.DB) {
+
+		repo := New(db)
+
+		query := types.Query{
+			SelectedFields: types.OccurrencesFields,
+			Pagination: &types.Pagination{
+				Limit:  12,
+				Offset: 5,
+			},
+		}
+		occurrences, err := repo.GetOccurrences(1, &query)
+		assert.NoError(t, err)
+		if assert.Len(t, occurrences, 12) {
+			assert.Equal(t, occurrences[0].LocusId, 1006)
+			assert.Equal(t, occurrences[:1][0].LocusId, 1018)
+		}
+	})
+}
+
 func TestMain(m *testing.M) {
 	testutils.SetupContainer()
 	code := m.Run()

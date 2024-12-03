@@ -119,18 +119,24 @@ type Query struct {
 	Filters        FilterNode //Root node of the filter tree
 	FilteredFields []Field    //Fields used in the filters
 	SelectedFields []Field    //Fields used for selection
+	Pagination     *Pagination
 }
 
-func BuildQuery(selected []string, sqon *SQON, fields *[]Field) (Query, error) {
+type Pagination struct {
+	Limit  int //Limit the number of results
+	Offset int //Offset the results
+}
+
+func BuildQuery(selected []string, sqon *SQON, fields *[]Field, pagination *Pagination) (Query, error) {
 
 	// Define allowed selectedCols
 	selectedFields := FindSelectedFields(fields, selected)
 
 	if sqon != nil {
 		root, visitedFilteredFields, err := parseSQONToAST(sqon, fields)
-		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields}, err
+		return Query{Filters: root, FilteredFields: visitedFilteredFields, SelectedFields: selectedFields, Pagination: pagination}, err
 	} else {
-		return Query{SelectedFields: selectedFields}, nil
+		return Query{SelectedFields: selectedFields, Pagination: pagination}, nil
 	}
 }
 

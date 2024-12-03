@@ -39,8 +39,17 @@ func (r *MySQLRepository) CheckDatabaseConnection() string {
 	return "up"
 }
 
-func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
+const MinLimit = 10
+const MaxLimit = 200
 
+func limit(n int) int {
+	if n < MaxLimit {
+		return n
+	} else {
+		return MaxLimit
+	}
+}
+func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
 	tx, part, err := buildQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err
@@ -53,7 +62,11 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 	}
 	var occurrences []Occurrence
 	if hasFieldFromTable(userQuery.FilteredFields, types.VariantTable) || hasFieldFromTable(userQuery.SelectedFields, types.VariantTable) {
-		tx = tx.Select("o.locus_id").Limit(10)
+		if userQuery.Pagination != nil {
+			tx = tx.Select("o.locus_id").Limit(limit(userQuery.Pagination.Limit)).Offset(userQuery.Pagination.Offset)
+		} else {
+			tx = tx.Select("o.locus_id").Limit(MinLimit)
+		}
 		err = r.db.Table("occurrences o, variants v").
 			Select(columns).
 			Where("o.seq_id = ? and part=? and v.locus_id = o.locus_id and o.locus_id in (?)", seqId, part, tx).

@@ -10,8 +10,8 @@ type SQON struct {
 type ListBody struct {
 	SelectedFields []string `json:"selected_fields"`
 	SQON           *SQON    `json:"sqon"`
-	Limit          int64    `json:"limit"`
-	Offset         int64    `json:"offset"`
+	Limit          int      `json:"limit"`
+	Offset         int      `json:"offset"`
 }
 
 type CountBody struct {
