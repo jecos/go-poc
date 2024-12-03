@@ -50,7 +50,7 @@ func limit(n int) int {
 	}
 }
 func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]Occurrence, error) {
-	tx, part, err := buildQuery(seqId, userQuery, r)
+	tx, part, err := prepareQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *MySQLRepository) GetOccurrences(seqId int, userQuery *types.Query) ([]O
 
 }
 
-func buildQuery(seqId int, userQuery *types.Query, r *MySQLRepository) (*gorm.DB, int, error) {
+func prepareQuery(seqId int, userQuery *types.Query, r *MySQLRepository) (*gorm.DB, int, error) {
 	part, err := r.GetPart(seqId)
 	if err != nil {
 		return nil, 0, err
@@ -109,7 +109,7 @@ func hasFieldFromTable(fields []types.Field, table types.Table) bool {
 }
 
 func (r *MySQLRepository) CountOccurrences(seqId int, userQuery *types.Query) (int64, error) {
-	tx, _, err := buildQuery(seqId, userQuery, r)
+	tx, _, err := prepareQuery(seqId, userQuery, r)
 	if err != nil {
 		return 0, err
 	}
@@ -133,7 +133,7 @@ func (r *MySQLRepository) GetPart(seqId int) (int, error) { //TODO cache
 }
 
 func (r *MySQLRepository) AggregateOccurrences(seqId int, userQuery *types.Query) ([]Aggregation, error) {
-	tx, _, err := buildQuery(seqId, userQuery, r)
+	tx, _, err := prepareQuery(seqId, userQuery, r)
 	if err != nil {
 		return nil, err
 	}
